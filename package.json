@@ -23,6 +23,7 @@
   },
   "peerDependencies": {
     "prop-types": "^15.5.4",
+    "ramda": "0.25.0",
     "react": "^15.0.0 || ^16.0.0",
     "react-dom": "^15.0.0 || ^16.0.0"
   },
