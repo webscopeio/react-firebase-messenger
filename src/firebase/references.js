@@ -1,3 +1,5 @@
+// @flow
+
 export const usersRef = (
   firebaseDB,
   userId,
