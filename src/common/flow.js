@@ -6,14 +6,14 @@ export type UserChatsEntity = {|
   lastMessageAuthorId: string,
   lastMessageCreatedAt: string,
   lastMessageText: string,
-  navigation: Object, // TODO flow  type for nav
+  navigation: Object, // TODO flow type for nav
   participants: Array<Object>,
   unseenMessages: number,
   userId: string,
 |}
 
 export type Message = {|
-  createdAt: Object, // js Date object
+  createdAt: Date,
   text: string,
   user: {|
     name: string,
