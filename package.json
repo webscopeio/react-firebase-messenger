@@ -19,7 +19,8 @@
     "start": "rollup -c -w",
     "prepare": "yarn run build",
     "predeploy": "cd example && yarn install && yarn run build",
-    "deploy": "gh-pages -d example/build"
+    "deploy": "gh-pages -d example/build",
+    "eslint": "eslint '**/*.js'"
   },
   "peerDependencies": {
     "prop-types": "^15.5.4",
@@ -28,6 +29,7 @@
     "react-dom": "^15.0.0 || ^16.0.0"
   },
   "devDependencies": {
+    "@webscopeio/eslint-config": "1.0.3",
     "babel-core": "^6.26.3",
     "babel-eslint": "^8.2.5",
     "babel-plugin-external-helpers": "^6.22.0",
@@ -35,10 +37,11 @@
     "babel-preset-react": "^6.24.1",
     "babel-preset-stage-0": "^6.24.1",
     "cross-env": "^5.1.4",
-    "eslint": "^5.0.1",
+    "eslint": "5.0.1",
     "eslint-config-standard": "^11.0.0",
     "eslint-config-standard-react": "^6.0.0",
     "eslint-plugin-import": "^2.13.0",
+    "eslint-plugin-jsx-a11y": "6.1.1",
     "eslint-plugin-node": "^7.0.1",
     "eslint-plugin-promise": "^4.0.0",
     "eslint-plugin-react": "^7.10.0",
