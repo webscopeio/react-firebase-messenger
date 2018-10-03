@@ -1,5 +1,8 @@
 import R from 'ramda'
-import TimeFormat from './timeFormat'
+import {
+  toUnixTimestamp,
+  unixToJSDate,
+} from './time-convertors'
 
 // js date to utc ms timestamp
 // remove _id from message object
@@ -9,7 +12,7 @@ export const transformMessagesToStoreInDB = userId => R.compose(
   R.map(
     R.compose(
       R.evolve({
-        createdAt: TimeFormat.toUnixTimestamp,
+        createdAt: toUnixTimestamp,
       }),
       R.assoc('userId', userId),
       R.dissoc('_id'),
@@ -39,7 +42,7 @@ export const loadMoreMessagesListTransform = participants => R.compose(
     R.compose(
       R.dissoc('userId'),
       R.evolve({
-        createdAt: TimeFormat.unixToJSDate,
+        createdAt: unixToJSDate,
       }),
       createUserObject(participants),
     ),
@@ -52,7 +55,7 @@ export const listnerSingleMessageTransform = (messageSnippet, participants) =>
   R.compose(
     R.dissoc('userId'),
     R.evolve({
-      createdAt: TimeFormat.unixToJSDate,
+      createdAt: unixToJSDate,
     }),
     R.assoc('_id', messageSnippet.key),
     createUserObject(participants),

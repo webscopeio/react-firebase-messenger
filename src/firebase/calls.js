@@ -1,6 +1,6 @@
 import R from 'ramda'
 
-import TimeFormat from '../helpers/timeFormat'
+import { toUnixTimestamp } from '../helpers/time-convertors'
 import {
   transformMessagesToStoreInDB,
 } from '../helpers/transformations'
@@ -16,7 +16,7 @@ export const toSendMessage = (
   meta,
   createNewChat,
 ) => {
-  const lastMessageTimeStamp = TimeFormat.toUnixTimestamp(meta.lastMessageCreatedAt)
+  const lastMessageTimeStamp = toUnixTimestamp(meta.lastMessageCreatedAt)
   const msgs = transformMessagesToStoreInDB(userId)(messages)
 
   const messagesUpdate = msgs.reduce((result, message) => {

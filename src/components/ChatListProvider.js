@@ -6,9 +6,9 @@ import {
   chatMetadataRef,
   userEventAllChatsRef,
   usersRef,
-} from '../../common/goodevent-firebase/messaging'
-import { toFlatList } from '../../common/helpers/Messaging.helpers'
-import type { UserChatsEntity } from '../../flow'
+} from '../firebase/references'
+import { toFlatList } from '../helpers/transformations'
+import type { UserChatsEntity } from '../common/flow'
 
 // TODO
 type State = {|
