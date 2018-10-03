@@ -22,10 +22,12 @@
     "deploy": "gh-pages -d example/build",
     "eslint": "eslint '**/*.js'"
   },
+  "dependencies": {
+    "moment": "2.22.2",
+    "ramda": "0.25.0"
+  },
   "peerDependencies": {
-    "moment": "2.x",
     "prop-types": "^15.5.4",
-    "ramda": "0.25.0",
     "react": "^15.0.0 || ^16.0.0",
     "react-dom": "^15.0.0 || ^16.0.0"
   },
@@ -69,11 +71,13 @@
     "dist"
   ],
   "husky": {
-    "hooks": {  
+    "hooks": {
       "pre-commit": "lint-staged"
     }
   },
   "lint-staged": {
-    "*.{js,jsx}": ["eslint"]
+    "*.{js,jsx}": [
+      "eslint"
+    ]
   }
 }

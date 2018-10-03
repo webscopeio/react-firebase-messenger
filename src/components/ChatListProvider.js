@@ -1,6 +1,6 @@
 // @flow
 import * as React from 'react'
-import R from 'ramda'
+import * as R from 'ramda'
 
 import {
   chatMetadataRef,

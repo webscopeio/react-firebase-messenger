@@ -1,4 +1,5 @@
-import R from 'ramda'
+import * as R from 'ramda'
+
 import {
   toUnixTimestamp,
   unixToJSDate,
@@ -72,8 +73,8 @@ export const toFlatList = userChats => R.compose(
     /* eslint-disable no-param-reassign */
     keys.forEach(key => item[key] = R.compose(
       R.assoc('chatId', key),
-    )(item[key])
-    )
+    )(item[key]))
+
     return item
   },
 )(userChats)
