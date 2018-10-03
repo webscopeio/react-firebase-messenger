@@ -1,5 +1,5 @@
 {
-  "name": "react-firebase-messenger",
+  "name": "@webscopeio/react-firebase-messenger",
   "version": "1.0.0",
   "description": "Messenger tool based on firebase realtime database",
   "author": "Webscope.io",
