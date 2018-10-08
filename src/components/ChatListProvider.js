@@ -33,6 +33,9 @@ class ChatListProvider extends React.Component<Props, State> {
   chatListDataFetch = ({
     eventId,
     uid,
+  }: {
+    eventId: string,
+    uid: string,
   }) => {
     const { firebaseDBRef } = this.props
 
@@ -53,6 +56,7 @@ class ChatListProvider extends React.Component<Props, State> {
         }
 
         const chatsIds = Object.keys(chatsMetaValues || {})
+        const allChatsParticipants = {}
 
         Promise.all(chatsIds.map(chatId => new Promise(res => chatMetadataRef(firebaseDBRef, chatId)
           .on('value', (chatMetaSnapshot) => {
@@ -78,7 +82,7 @@ class ChatListProvider extends React.Component<Props, State> {
                       }),
                     )(chatMetas)
 
-                    usersRef(firebaseDBRef, participantId).off()
+                    allChatsParticipants[participantId] = true
 
                     resolve()
                   }))
@@ -88,8 +92,11 @@ class ChatListProvider extends React.Component<Props, State> {
             }))
           })
         ))).then((data) => {
-          const chats = data.reduce((acc, cur) => ({ ...acc, ...cur }), {})
+          Object.keys(allChatsParticipants).map(participantId =>
+            usersRef(firebaseDBRef, participantId).off()
+          )
 
+          const chats = data.reduce((acc, cur) => ({ ...acc, ...cur }), {})
           this.setState({
             chatsData: toFlatList(chats),
             loading: false,
@@ -102,6 +109,9 @@ class ChatListProvider extends React.Component<Props, State> {
   unsubscribeChatsData = ({
     eventId,
     uid,
+  }: {
+    eventId: string,
+    uid: string,
   }) => {
     const { firebaseDBRef } = this.props
 

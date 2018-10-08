@@ -1,20 +1,22 @@
+// @flow
 import * as R from 'ramda'
 
 import { toUnixTimestamp } from '../helpers/time-convertors'
 import {
   transformMessagesToStoreInDB,
 } from '../helpers/transformations'
+import type { Message } from '../common/flow'
 
 // To send and store message on fdb
 export const toSendMessage = (
-  firebaseDB,
-  chatId,
-  userId,
-  messages,
-  eventId,
-  recipientsIds,
-  meta,
-  createNewChat,
+  firebaseDB: Object,
+  chatId: string,
+  userId: string,
+  messages: Array<Message>,
+  eventId: string,
+  recipientsIds: Array<string>,
+  meta: Object,
+  createNewChat: ?boolean,
 ) => {
   const lastMessageTimeStamp = toUnixTimestamp(meta.lastMessageCreatedAt)
   const msgs = transformMessagesToStoreInDB(userId)(messages)
@@ -46,7 +48,10 @@ export const toSendMessage = (
   const lastMessageCreatedAtUpdate = recipientsIds.reduce((result, participantId) => {
     const newResult = R.compose(
       R.assoc(`user-chats/${participantId}/${chatId}/lastMessageCreatedAt`, lastMessageTimeStamp),
-      R.assoc(`user-event-chats/${participantId}/${eventId}/${chatId}/lastMessageCreatedAt`, lastMessageTimeStamp),
+      /* //
+      R.assoc(`user-event-chats/${participantId}/${eventId}/${chatId}/lastMessageCreatedAt`,
+      lastMessageTimeStamp), //
+      */
     )(result || {})
     return newResult
   }, 0)
@@ -64,7 +69,9 @@ export const toSendMessage = (
 
   const entireUpdate = {
     [`user-chats/${userId}/${chatId}/lastMessageCreatedAt`]: lastMessageTimeStamp,
+    /* //
     [`user-event-chats/${userId}/${eventId}/${chatId}/lastMessageCreatedAt`]: lastMessageTimeStamp,
+    */
     ...messagesUpdate,
     ...unreadMessagesUpdate,
     ...lastMessageCreatedAtUpdate,
@@ -75,11 +82,11 @@ export const toSendMessage = (
 }
 
 export const checkForChatExistence = (
-  firebaseDB,
-  theUserId,
-  uid,
-  eventId,
-) => new Promise((resolve) => {
+  firebaseDB: Object,
+  theUserId: string,
+  uid: string,
+  eventId: string,
+): Object => new Promise((resolve) => {
   firebaseDB.child('chat-metadata')
     .orderByChild(`users/${theUserId}`)
     .startAt(true)

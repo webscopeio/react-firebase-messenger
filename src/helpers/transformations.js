@@ -9,7 +9,7 @@ import {
 // js date to utc ms timestamp
 // remove _id from message object
 // array to object with _id's keys
-export const transformMessagesToStoreInDB = userId => R.compose(
+export const transformMessagesToStoreInDB = (userId: string) => R.compose(
   R.toPairs,
   R.map(
     R.compose(
@@ -25,7 +25,7 @@ export const transformMessagesToStoreInDB = userId => R.compose(
 )
 
 // Create user object for GiftedChat
-const createUserObject = participants => messageObject =>
+const createUserObject = (participants: Object) => (messageObject: Object) =>
   R.assoc('user', {
     _id: messageObject.userId,
     name: (participants[messageObject.userId]
@@ -37,23 +37,24 @@ const createUserObject = participants => messageObject =>
   }, messageObject) // TODO name, avatar
 
 // handling list of messages which are got from firebase
-export const loadMoreMessagesListTransform = participants => R.compose(
-  // R.reverse,
-  R.sortBy(R.prop('createdAt')),
-  R.map(
-    R.compose(
-      R.dissoc('userId'),
-      R.evolve({
-        createdAt: unixToJSDate,
-      }),
-      createUserObject(participants),
+export const loadMoreMessagesListTransform = (participants: Object) =>
+  R.compose(
+    // R.reverse,
+    R.sortBy(R.prop('createdAt')),
+    R.map(
+      R.compose(
+        R.dissoc('userId'),
+        R.evolve({
+          createdAt: unixToJSDate,
+        }),
+        createUserObject(participants),
+      ),
     ),
-  ),
-  R.values,
-)
+    R.values,
+  )
 
 // handling one single message which is got from firebase
-export const listnerSingleMessageTransform = (messageSnippet, participants) =>
+export const listnerSingleMessageTransform = (messageSnippet: Object, participants: Object) =>
   R.compose(
     R.dissoc('userId'),
     R.evolve({
@@ -64,7 +65,7 @@ export const listnerSingleMessageTransform = (messageSnippet, participants) =>
   )
 
 // Transform data into FlatList requires shape
-export const toFlatList = userChats => R.compose(
+export const toFlatList = (userChats: Array<any>) => R.compose(
   R.reverse,
   R.sortBy(R.prop('lastMessageCreatedAt')),
   R.values,
