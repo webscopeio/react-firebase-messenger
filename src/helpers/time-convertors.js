@@ -1,5 +1,6 @@
+// @flow
 import moment from 'moment'
 
-export const toUnixTimestamp = item => moment(item).format('x')
+export const toUnixTimestamp = (item: Date): string => moment(item).format('x')
 
-export const unixToJSDate = time => moment(time, 'x').toDate()
+export const unixToJSDate = (time: string): Date => moment(time, 'x').toDate()

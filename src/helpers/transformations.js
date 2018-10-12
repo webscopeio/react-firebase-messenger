@@ -9,7 +9,7 @@ import {
 // js date to utc ms timestamp
 // remove _id from message object
 // array to object with _id's keys
-export const transformMessagesToStoreInDB = userId => R.compose(
+export const transformMessagesToStoreInDB = (userId: string) => R.compose(
   R.toPairs,
   R.map(
     R.compose(
@@ -24,36 +24,39 @@ export const transformMessagesToStoreInDB = userId => R.compose(
   R.indexBy(R.prop('_id')),
 )
 
-// Create user object for GiftedChat
-const createUserObject = participants => messageObject =>
-  R.assoc('user', {
+// Create user object in GiftedChat requires shape
+const createUserObject = (participants: Object) => (messageObject: Object) => {
+  const participant = participants[messageObject.userId]
+
+  return R.assoc('user', {
     _id: messageObject.userId,
-    name: (participants[messageObject.userId]
-      && participants[messageObject.userId].displayName)
-      || '?', // TODO THE user name
-    photoURL: (participants[messageObject.userId]
-      && participants[messageObject.userId].photoURL)
-      || undefined,
-  }, messageObject) // TODO name, avatar
+    name: (participant && (
+      participant.businessName ||
+      `${participant.nameFirst} ${participant.nameLast}`
+    )) || '?', // TODO THIS UNIVERSAL
+    photoURL: (participant && participant.photoURL) || undefined,
+  }, messageObject)
+}
 
 // handling list of messages which are got from firebase
-export const loadMoreMessagesListTransform = participants => R.compose(
-  // R.reverse,
-  R.sortBy(R.prop('createdAt')),
-  R.map(
-    R.compose(
-      R.dissoc('userId'),
-      R.evolve({
-        createdAt: unixToJSDate,
-      }),
-      createUserObject(participants),
+export const loadMoreMessagesListTransform = (participants: Object) =>
+  R.compose(
+    // R.reverse,
+    R.sortBy(R.prop('createdAt')),
+    R.map(
+      R.compose(
+        R.dissoc('userId'),
+        R.evolve({
+          createdAt: unixToJSDate,
+        }),
+        createUserObject(participants),
+      ),
     ),
-  ),
-  R.values,
-)
+    R.values,
+  )
 
 // handling one single message which is got from firebase
-export const listnerSingleMessageTransform = (messageSnippet, participants) =>
+export const listnerSingleMessageTransform = (messageSnippet: Object, participants: Object) =>
   R.compose(
     R.dissoc('userId'),
     R.evolve({
@@ -64,7 +67,7 @@ export const listnerSingleMessageTransform = (messageSnippet, participants) =>
   )
 
 // Transform data into FlatList requires shape
-export const toFlatList = userChats => R.compose(
+export const toFlatList = (userChats: Array<any>) => R.compose(
   R.reverse,
   R.sortBy(R.prop('lastMessageCreatedAt')),
   R.values,

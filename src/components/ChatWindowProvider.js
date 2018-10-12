@@ -1,12 +1,15 @@
 // @flow
 import React from 'react'
 import * as R from 'ramda'
-import PropTypes from 'prop-types'
 
-import { chatMessagefRef } from '../firebase/references'
+import {
+  chatMessagefRef,
+  usersRef,
+} from '../firebase/references'
 import {
   toSendMessage,
   checkForChatExistence,
+  getGroupChatsByEvent,
 } from '../firebase/calls'
 import {
   getMessagesIds,
@@ -37,21 +40,19 @@ const chatDefaultState = {
 
 const emptyFunc = () => null
 
-const ChatProviderWrapper = (ComposedComponent) => {
+const ChatProviderWrapper = (firebaseDB: any, ComposedComponent: Object) => {
   class ChatProvider extends React.Component<Props, State> {
     state = chatDefaultState
-
-    static contextTypes = {
-      firebaseDB: PropTypes.object.isRequired,
-    }
 
     resetChat = (callback: Function) => this.setState(chatDefaultState, callback || emptyFunc)
 
     chatListner = ({
       participants,
       webMessageTransform,
+    }: {
+      participants: Object,
+      webMessageTransform: boolean,
     }) => (chatId: string) => {
-      const { firebaseDB } = this.context
       const { initialLoad } = this.state
 
       // we want to fetch first N messages at once
@@ -84,7 +85,6 @@ const ChatProviderWrapper = (ComposedComponent) => {
               this.state.messages
             )
 
-            // TODO CHECK RN VERSION
             this.setState({
               messages: updatedMesseges,
               messagesCount: this.state.messagesCount + processedMessages.length,
@@ -126,9 +126,12 @@ const ChatProviderWrapper = (ComposedComponent) => {
       eventId,
       uid,
       recipientsIds,
+    }: {
+      newChatId: string,
+      eventId: string,
+      uid: string,
+      recipientsIds: Array<string>,
     }) => (messages: Array<Message>) => {
-      const { firebaseDB } = this.context
-
       const newChatMetaUpdate = {
         lastMessageText: R.last(messages).text,
         lastMessageCreatedAt: R.last(messages).createdAt,
@@ -154,10 +157,8 @@ const ChatProviderWrapper = (ComposedComponent) => {
         true
       )
 
-      this.setState({
-        /* eslint-disable react/no-unused-state */
-        tempChatIdStore: newChatId,
-      })
+      /* eslint-disable react/no-unused-state */
+      this.setState({ tempChatIdStore: newChatId })
     }
 
     onSend = ({
@@ -166,9 +167,13 @@ const ChatProviderWrapper = (ComposedComponent) => {
       eventId,
       recipientsIds,
       messages,
+    }: {
+      chatId: string,
+      uid: string,
+      eventId: string,
+      recipientsIds: Array<string>,
+      messages: Array<Object>,
     }) => {
-      const { firebaseDB } = this.context
-
       toSendMessage(
         firebaseDB,
         chatId,
@@ -184,19 +189,20 @@ const ChatProviderWrapper = (ComposedComponent) => {
       )
     }
 
-    unsubscribeChatMessages = (chatId: string) => {
-      const { firebaseDB } = this.context
-
-      return chatMessagefRef(firebaseDB, chatId).off()
-    }
+    /* eslint-disable-next-line */
+    unsubscribeChatMessages = (chatId: string) => chatMessagefRef(firebaseDB, chatId).off()
 
     loadMoreMessages = ({
       chatId,
       participants,
       callBack,
       webMessageTransform,
+    }: {
+      chatId: string,
+      participants: Object,
+      callBack: Function,
+      webMessageTransform: Function,
     }) => {
-      const { firebaseDB } = this.context
       const { messagesCount } = this.state
       const updatedMsgsCount = messagesCount + MESSAGE_PACKAGE_COUNT
       // draft
@@ -221,7 +227,8 @@ const ChatProviderWrapper = (ComposedComponent) => {
               messagesFromDB[item.key]._id = item.key
             })
 
-            const loadedMessages = loadMoreMessagesListTransform(participants)(messagesFromDB)
+            const loadedMessages =
+              loadMoreMessagesListTransform(participants)(messagesFromDB)
 
             this.setState({
               messages: webMessageTransform
@@ -236,8 +243,10 @@ const ChatProviderWrapper = (ComposedComponent) => {
     markMessagesRead = ({
       uid,
       prevMessages,
+    }: {
+      uid: string,
+      prevMessages: any,
     }) => {
-      const { firebaseDB } = this.context
       const {
         messages,
       } = this.state
@@ -260,9 +269,12 @@ const ChatProviderWrapper = (ComposedComponent) => {
       theUserId,
       uid,
       eventId,
+    }: {
+      theUserId: string,
+      uid: string,
+      eventId: string,
+      /* eslint-disable-next-line */
     }) => {
-      const { firebaseDB } = this.context
-
       return checkForChatExistence(
         firebaseDB,
         theUserId,
@@ -271,9 +283,32 @@ const ChatProviderWrapper = (ComposedComponent) => {
       )
     }
 
-    render() {
-      // const { ...rest } = this.props
+    getChatParticipantsDetails = async (participants: Object) => {
+      const allChatsParticipants = {}
+      await Promise.all(
+        R.keys(participants).map(participantId =>
+          new Promise(resolve => usersRef(firebaseDB, participantId)
+            .on('value', (userSnapshot) => {
+              const userInfo = userSnapshot.val()
+              const userData = { ...userInfo, uid: participantId }
 
+              allChatsParticipants[participantId] = userData
+
+              resolve()
+            }))
+        )
+      ).then(() => {
+        Object.keys(allChatsParticipants).map(participantId =>
+          usersRef(firebaseDB, participantId).off()
+        )
+      })
+
+      return allChatsParticipants
+    }
+
+    getGroupChatsByEvent = (eventId: string) => getGroupChatsByEvent(firebaseDB, eventId)
+
+    render() {
       return (
         <ComposedComponent
           chatListner={this.chatListner}
@@ -286,6 +321,8 @@ const ChatProviderWrapper = (ComposedComponent) => {
           resetChat={this.resetChat}
           loadMore={this.loadMoreMessages}
           checkForChat={this.checkForChat}
+          getGroupChatsByEvent={this.getGroupChatsByEvent}
+          getChatParticipantsDetails={this.getChatParticipantsDetails}
           {...this.props}
         />
       )
