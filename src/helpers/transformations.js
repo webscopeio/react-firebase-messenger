@@ -24,17 +24,19 @@ export const transformMessagesToStoreInDB = (userId: string) => R.compose(
   R.indexBy(R.prop('_id')),
 )
 
-// Create user object for GiftedChat
-const createUserObject = (participants: Object) => (messageObject: Object) =>
-  R.assoc('user', {
+// Create user object in GiftedChat requires shape
+const createUserObject = (participants: Object) => (messageObject: Object) => {
+  const participant = participants[messageObject.userId]
+
+  return R.assoc('user', {
     _id: messageObject.userId,
-    name: (participants[messageObject.userId]
-      && participants[messageObject.userId].displayName)
-      || '?', // TODO THE user name
-    photoURL: (participants[messageObject.userId]
-      && participants[messageObject.userId].photoURL)
-      || undefined,
-  }, messageObject) // TODO name, avatar
+    name: (participant && (
+      participant.businessName ||
+      `${participant.nameFirst} ${participant.nameLast}`
+    )) || '?', // TODO THIS UNIVERSAL
+    photoURL: (participant && participant.photoURL) || undefined,
+  }, messageObject)
+}
 
 // handling list of messages which are got from firebase
 export const loadMoreMessagesListTransform = (participants: Object) =>
