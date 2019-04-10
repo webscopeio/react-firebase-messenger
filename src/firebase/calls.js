@@ -31,17 +31,14 @@ export const toSendMessage = (
     let newResult = result || {}
 
     // eslint-disable-next-line
-    recipientsIds.forEach((recipientId) =>
-      newResult = R.assoc(
-        `unread-messages/${recipientId}/${message[0]}`,
-        {
+    recipientsIds.forEach((recipientId) => {
+      if (recipientId !== userId) {
+        newResult = R.assoc(`unread-messages/${recipientId}/${message[0]}`, {
           chatId,
           eventId,
-        },
-        newResult
-      )
-    )
-
+        }, newResult)
+      }
+    })
     return newResult
   }, 0)
 

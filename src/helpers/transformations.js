@@ -34,7 +34,7 @@ const createUserObject = (participants: Object) => (messageObject: Object) => {
       participant.businessName ||
       `${participant.nameFirst} ${participant.nameLast}`
     )) || '?', // TODO THIS UNIVERSAL
-    photoURL: (participant && participant.photoURL) || undefined,
+    photoUrl: (participant && participant.photoUrl) || undefined,
   }, messageObject)
 }
 

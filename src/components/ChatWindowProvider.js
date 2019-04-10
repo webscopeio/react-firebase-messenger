@@ -288,7 +288,7 @@ const ChatProviderWrapper = (firebaseDB: any, ComposedComponent: Object) => {
       await Promise.all(
         R.keys(participants).map(participantId =>
           new Promise(resolve => usersRef(firebaseDB, participantId)
-            .on('value', (userSnapshot) => {
+            .once('value', (userSnapshot) => {
               const userInfo = userSnapshot.val()
               const userData = { ...userInfo, uid: participantId }
 
@@ -297,11 +297,7 @@ const ChatProviderWrapper = (firebaseDB: any, ComposedComponent: Object) => {
               resolve()
             }))
         )
-      ).then(() => {
-        Object.keys(allChatsParticipants).map(participantId =>
-          usersRef(firebaseDB, participantId).off()
-        )
-      })
+      )
 
       return allChatsParticipants
     }
