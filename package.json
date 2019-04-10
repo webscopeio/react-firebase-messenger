@@ -1,6 +1,6 @@
 {
   "name": "@webscopeio/react-firebase-messenger",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Messenger tool based on firebase realtime database",
   "author": "Webscope.io",
   "license": "MIT",
