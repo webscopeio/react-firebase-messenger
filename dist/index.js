@@ -3516,7 +3516,7 @@ var usersRef = function usersRef(firebaseDB, userId) {
   return firebaseDB.child("users/" + userId);
 };
 
-var chatMessagefRef = function chatMessagefRef(firebaseDB, chatId) {
+var chatMessagesRef = function chatMessagesRef(firebaseDB, chatId) {
   return firebaseDB.child("chat-messages/" + chatId);
 };
 
@@ -8345,8 +8345,17 @@ var ChatListProvider = function (_React$Component) {
 }(React.Component);
 
 // To send and store message on fdb
-var toSendMessage = function toSendMessage(firebaseDB, chatId, userId, messages, eventId, recipientsIds, meta, createNewChat) {
-  var _ref2;
+var toSendMessage = function toSendMessage(_ref) {
+  var _ref3;
+
+  var firebaseDB = _ref.firebaseDB,
+      chatId = _ref.chatId,
+      userId = _ref.userId,
+      messages = _ref.messages,
+      eventId = _ref.eventId,
+      recipientsIds = _ref.recipientsIds,
+      meta = _ref.meta,
+      createNewChat = _ref.createNewChat;
 
   var lastMessageTimeStamp = toUnixTimestamp(meta.lastMessageCreatedAt);
   var msgs = transformMessagesToStoreInDB(userId)(messages);
@@ -8383,7 +8392,7 @@ var toSendMessage = function toSendMessage(firebaseDB, chatId, userId, messages,
   }, 0);
 
   // When creating new chat also include such properties as users(participants) and eventId
-  var chatMetaUpdate = createNewChat ? defineProperty({}, 'chat-metadata/' + chatId, meta) : (_ref2 = {}, defineProperty(_ref2, 'chat-metadata/' + chatId + '/lastMessageAuthorId', meta.lastMessageAuthorId), defineProperty(_ref2, 'chat-metadata/' + chatId + '/lastMessageCreatedAt', meta.lastMessageCreatedAt), defineProperty(_ref2, 'chat-metadata/' + chatId + '/lastMessageText', meta.lastMessageText), _ref2);
+  var chatMetaUpdate = createNewChat ? defineProperty({}, 'chat-metadata/' + chatId, meta) : (_ref3 = {}, defineProperty(_ref3, 'chat-metadata/' + chatId + '/lastMessageAuthorId', meta.lastMessageAuthorId), defineProperty(_ref3, 'chat-metadata/' + chatId + '/lastMessageCreatedAt', meta.lastMessageCreatedAt), defineProperty(_ref3, 'chat-metadata/' + chatId + '/lastMessageText', meta.lastMessageText), _ref3);
 
   var entireUpdate = _extends(defineProperty({}, 'user-chats/' + userId + '/' + chatId + '/lastMessageCreatedAt', lastMessageTimeStamp), messagesUpdate, unreadMessagesUpdate, lastMessageCreatedAtUpdate, chatMetaUpdate);
 
@@ -8462,7 +8471,9 @@ var chatDefaultState = {
   messages: [],
   messagesCount: 0,
   tempChatIdStore: '',
-  initialLoad: true
+  initialLoad: true,
+  isLoading: true,
+  hasMoreToLoad: true
 };
 
 var emptyFunc = function emptyFunc() {
@@ -8490,13 +8501,13 @@ var ChatProviderWrapper = function ChatProviderWrapper(firebaseDB, ComposedCompo
       }, _this.chatListner = function (_ref2) {
         var participants = _ref2.participants,
             webMessageTransform = _ref2.webMessageTransform;
-        return function (chatId) {
+        return function (chatId, newChat) {
           var initialLoad = _this.state.initialLoad;
 
           // we want to fetch first N messages at once
 
-          if (initialLoad) {
-            chatMessagefRef(firebaseDB, chatId).orderByChild('createdAt').limitToLast(MESSAGE_PACKAGE_COUNT).on('value', function (messagesSnap) {
+          if (!newChat && initialLoad) {
+            chatMessagesRef(firebaseDB, chatId).orderByChild('createdAt').limitToLast(MESSAGE_PACKAGE_COUNT).on('value', function (messagesSnap) {
               /*
               * Here we fetch first batch of the messages at once and process them for the chat
               * component. After that we push them to state, mark initial load as done and unsubsribe
@@ -8519,10 +8530,10 @@ var ChatProviderWrapper = function ChatProviderWrapper(firebaseDB, ComposedCompo
                 initialLoad: false
               });
 
-              chatMessagefRef(firebaseDB, chatId).off('value');
+              chatMessagesRef(firebaseDB, chatId).off('value');
             });
           } else {
-            chatMessagefRef(firebaseDB, chatId).orderByChild('createdAt').limitToLast(MESSAGE_PACKAGE_COUNT).on('child_added', function (messageSnippet) {
+            chatMessagesRef(firebaseDB, chatId).orderByChild('createdAt').limitToLast(MESSAGE_PACKAGE_COUNT).on('child_added', function (messageSnippet) {
               var message = listnerSingleMessageTransform(messageSnippet, participants)(messageSnippet.val());
 
               // We have to check for duplicates since we get already fetched node as well after
@@ -8538,7 +8549,8 @@ var ChatProviderWrapper = function ChatProviderWrapper(firebaseDB, ComposedCompo
 
               _this.setState({
                 messages: updatedMesseges,
-                messagesCount: _this.state.messagesCount + 1
+                messagesCount: _this.state.messagesCount + 1,
+                initialLoad: false
               });
             });
           }
@@ -8554,7 +8566,9 @@ var ChatProviderWrapper = function ChatProviderWrapper(firebaseDB, ComposedCompo
             lastMessageCreatedAt: last(messages).createdAt,
             lastMessageAuthorId: uid,
             users: {},
-            eventId: eventId
+            eventId: eventId,
+            // now all of them are private by default
+            type: 'private'
           };
           var participants = concat([uid], recipientsIds);
 
@@ -8562,10 +8576,23 @@ var ChatProviderWrapper = function ChatProviderWrapper(firebaseDB, ComposedCompo
             newChatMetaUpdate.users[id] = true;
           });
 
-          toSendMessage(firebaseDB, newChatId, uid, messages, eventId, recipientsIds, newChatMetaUpdate, true);
+          toSendMessage({
+            firebaseDB: firebaseDB,
+            chatId: newChatId,
+            userId: uid,
+            messages: messages,
+            eventId: eventId,
+            recipientsIds: recipientsIds,
+            meta: newChatMetaUpdate,
+            createNewChat: true,
+            // now all of them are private by default
+            createPrivateChat: true
+          });
 
-          /* eslint-disable react/no-unused-state */
-          _this.setState({ tempChatIdStore: newChatId });
+          _this.setState({
+            /* eslint-disable react/no-unused-state */
+            tempChatIdStore: newChatId
+          });
         };
       }, _this.onSend = function (_ref4) {
         var chatId = _ref4.chatId,
@@ -8574,13 +8601,21 @@ var ChatProviderWrapper = function ChatProviderWrapper(firebaseDB, ComposedCompo
             recipientsIds = _ref4.recipientsIds,
             messages = _ref4.messages;
 
-        toSendMessage(firebaseDB, chatId, uid, messages, eventId, recipientsIds, {
-          lastMessageText: last(messages).text,
-          lastMessageCreatedAt: last(messages).createdAt,
-          lastMessageAuthorId: uid
+        toSendMessage({
+          firebaseDB: firebaseDB,
+          chatId: chatId,
+          userId: uid,
+          messages: messages,
+          eventId: eventId,
+          recipientsIds: recipientsIds,
+          meta: {
+            lastMessageText: last(messages).text,
+            lastMessageCreatedAt: last(messages).createdAt,
+            lastMessageAuthorId: uid
+          }
         });
       }, _this.unsubscribeChatMessages = function (chatId) {
-        return chatMessagefRef(firebaseDB, chatId).off();
+        return chatMessagesRef(firebaseDB, chatId).off();
       }, _this.loadMoreMessages = function (_ref5) {
         var chatId = _ref5.chatId,
             participants = _ref5.participants,
@@ -8594,27 +8629,32 @@ var ChatProviderWrapper = function ChatProviderWrapper(firebaseDB, ComposedCompo
         // .limitToFirst(5)
         // TODO fetch interval 5/+5/+5/...
 
-        // chatMessagefRef(firebaseDBRef, chatId).keepSynced(true) // TODO maybe do it better way
+        // chatMessagesRef(firebaseDBRef, chatId).keepSynced(true) // TODO maybe do it better way
         // fetch last 5/10/15/20/...
 
-        chatMessagefRef(firebaseDB, chatId).orderByChild('createdAt').limitToLast(updatedMsgsCount).once('value') // TODO via on and unsubscription
-        .then(function (chatMsgs) {
-          var messagesFromDB = chatMsgs.val();
+        _this.setState({ isLoadingEarlier: true }, function () {
+          chatMessagesRef(firebaseDB, chatId).orderByChild('createdAt').limitToLast(updatedMsgsCount).once('value') // TODO via on and unsubscription
+          .then(function (chatMsgs) {
+            var messagesFromDB = chatMsgs.val();
 
-          if (values(messagesFromDB).length > _this.state.messages.length) {
-            // add to message's id to other message's object
-            chatMsgs.forEach(function (item) {
-              /* eslint-disable no-underscore-dangle */
-              messagesFromDB[item.key]._id = item.key;
-            });
+            if (values(messagesFromDB).length > _this.state.messages.length) {
+              // add to message's id to other message's object
+              chatMsgs.forEach(function (item) {
+                /* eslint-disable no-underscore-dangle */
+                messagesFromDB[item.key]._id = item.key;
+              });
 
-            var loadedMessages = loadMoreMessagesListTransform(participants)(messagesFromDB);
+              var loadedMessages = loadMoreMessagesListTransform(participants)(messagesFromDB);
+              var hasMoreToLoad = loadedMessages.length === updatedMsgsCount;
 
-            _this.setState({
-              messages: webMessageTransform ? loadedMessages : reverse(loadedMessages),
-              messagesCount: updatedMsgsCount
-            }, callBack || emptyFunc);
-          }
+              _this.setState({
+                hasMoreToLoad: hasMoreToLoad,
+                isLoadingEarlier: false,
+                messages: webMessageTransform ? loadedMessages : reverse(loadedMessages),
+                messagesCount: updatedMsgsCount
+              }, callBack || emptyFunc);
+            }
+          });
         });
       }, _this.markMessagesRead = function (_ref6) {
         var uid = _ref6.uid,
@@ -8680,9 +8720,6 @@ var ChatProviderWrapper = function ChatProviderWrapper(firebaseDB, ComposedCompo
         return getGroupChatsByEvent(firebaseDB, eventId);
       }, _temp), possibleConstructorReturn(_this, _ret);
     }
-
-    /* eslint-disable-next-line */
-
 
     createClass(ChatProvider, [{
       key: 'render',

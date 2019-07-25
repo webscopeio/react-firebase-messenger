@@ -5,7 +5,7 @@ export const usersRef = (
   userId: string,
 ) => firebaseDB.child(`users/${userId}`)
 
-export const chatMessagefRef = (
+export const chatMessagesRef = (
   firebaseDB: Object,
   chatId: string
 ) => firebaseDB.child(`chat-messages/${chatId}`)
