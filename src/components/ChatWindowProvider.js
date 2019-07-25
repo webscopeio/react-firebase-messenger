@@ -25,19 +25,21 @@ type Props = {
 }
 
 type State = {
+  initialLoad: boolean,
+  isLoadingEarlier: boolean,
+  hasMoreToLoad: boolean,
   messages: Array<Message>,
   messagesCount: number,
   tempChatIdStore: string,
-  initialLoad: boolean,
 }
 
 const MESSAGE_PACKAGE_COUNT = 10
 const chatDefaultState = {
+  initialLoad: true,
+  isLoadingEarlier: false,
   messages: [],
   messagesCount: 0,
   tempChatIdStore: '',
-  initialLoad: true,
-  isLoading: true,
   hasMoreToLoad: true,
 }
 
@@ -317,7 +319,7 @@ const ChatProviderWrapper = (firebaseDB: any, ComposedComponent: Object) => {
           loadMoreMessages={this.loadMoreMessages}
           unsubscribeChatMessages={this.unsubscribeChatMessages}
           onSend={this.onSend}
-          chatProps={this.state}
+          chatProps={{ ...this.state, MESSAGE_PACKAGE_COUNT }}
           resetChat={this.resetChat}
           loadMore={this.loadMoreMessages}
           checkForChat={this.checkForChat}

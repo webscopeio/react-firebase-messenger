@@ -8260,6 +8260,7 @@ var ChatListProvider = function (_React$Component) {
               loading: false
             });
           }
+
           var chatsIds = Object.keys(chatsMetaValues || {});
           var allChatsParticipants = {};
 
@@ -8276,7 +8277,9 @@ var ChatListProvider = function (_React$Component) {
                   return new Promise(function (resolve) {
                     return usersRef(firebaseDBRef, participantId).on('value', function (userSnapshot) {
                       var userInfo = userSnapshot.val();
-                      var userData = _extends({}, userInfo, { uid: participantId });
+                      var userData = _extends({}, userInfo, {
+                        uid: participantId
+                      });
 
                       chatMetas = compose(evolve({
                         participants: append(userData)
@@ -8461,11 +8464,11 @@ var getGroupChatsByEvent = function getGroupChatsByEvent(firebaseDB, eventId) {
 
 var MESSAGE_PACKAGE_COUNT = 10;
 var chatDefaultState = {
+  initialLoad: true,
+  isLoadingEarlier: false,
   messages: [],
   messagesCount: 0,
   tempChatIdStore: '',
-  initialLoad: true,
-  isLoading: true,
   hasMoreToLoad: true
 };
 
@@ -8638,10 +8641,10 @@ var ChatProviderWrapper = function ChatProviderWrapper(firebaseDB, ComposedCompo
               });
 
               var loadedMessages = loadMoreMessagesListTransform(participants)(messagesFromDB);
-              var hasMoreToLoad = loadedMessages.length === updatedMsgsCount;
+              var _hasMoreToLoad = loadedMessages.length === updatedMsgsCount;
 
               _this.setState({
-                hasMoreToLoad: hasMoreToLoad,
+                hasMoreToLoad: _hasMoreToLoad,
                 isLoadingEarlier: false,
                 messages: webMessageTransform ? loadedMessages : reverse(loadedMessages),
                 messagesCount: updatedMsgsCount
@@ -8724,7 +8727,7 @@ var ChatProviderWrapper = function ChatProviderWrapper(firebaseDB, ComposedCompo
           loadMoreMessages: this.loadMoreMessages,
           unsubscribeChatMessages: this.unsubscribeChatMessages,
           onSend: this.onSend,
-          chatProps: this.state,
+          chatProps: _extends({}, this.state, { MESSAGE_PACKAGE_COUNT: MESSAGE_PACKAGE_COUNT }),
           resetChat: this.resetChat,
           loadMore: this.loadMoreMessages,
           checkForChat: this.checkForChat,
