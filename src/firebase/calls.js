@@ -25,7 +25,7 @@ export const toSendMessage = ({
   eventId: string,
   recipientsIds: Array<string>,
   meta: Object,
-  createNewChat: ?boolean,
+  createNewChat?: boolean,
 }) => {
   const lastMessageTimeStamp = toUnixTimestamp(meta.lastMessageCreatedAt)
   const msgs = transformMessagesToStoreInDB(userId)(messages)

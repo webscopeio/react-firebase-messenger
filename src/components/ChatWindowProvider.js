@@ -45,7 +45,11 @@ const chatDefaultState = {
 
 const emptyFunc = () => null
 
-const ChatProviderWrapper = (firebaseDB: any, ComposedComponent: Object) => {
+const ChatProviderWrapper = (
+  firebaseDB: any,
+  ComposedComponent: Object,
+  packageCount: number = MESSAGE_PACKAGE_COUNT,
+) => {
   class ChatProvider extends React.Component<Props, State> {
     state = chatDefaultState
     resetChat = (callback: Function) => this.setState(chatDefaultState, callback || emptyFunc)
@@ -53,6 +57,9 @@ const ChatProviderWrapper = (firebaseDB: any, ComposedComponent: Object) => {
     chatListner = ({
       participants,
       webMessageTransform,
+    }: {
+      participants: Object,
+      webMessageTransform: boolean,
     }) => (chatId: string, newChat?: boolean) => {
       const { initialLoad } = this.state
 
@@ -60,7 +67,7 @@ const ChatProviderWrapper = (firebaseDB: any, ComposedComponent: Object) => {
       if (!newChat && initialLoad) {
         chatMessagesRef(firebaseDB, chatId)
           .orderByChild('createdAt')
-          .limitToLast(MESSAGE_PACKAGE_COUNT)
+          .limitToLast(packageCount)
           .on('value', (messagesSnap) => {
             /*
             * Here we fetch first batch of the messages at once and process them for the chat
@@ -97,7 +104,7 @@ const ChatProviderWrapper = (firebaseDB: any, ComposedComponent: Object) => {
       } else {
         chatMessagesRef(firebaseDB, chatId)
           .orderByChild('createdAt')
-          .limitToLast(MESSAGE_PACKAGE_COUNT)
+          .limitToLast(packageCount)
           .on('child_added', (messageSnippet) => {
             const message = listnerSingleMessageTransform(messageSnippet, participants)(
               messageSnippet.val()
@@ -174,6 +181,12 @@ const ChatProviderWrapper = (firebaseDB: any, ComposedComponent: Object) => {
       eventId,
       recipientsIds,
       messages,
+    }: {
+      chatId: string,
+      uid: string,
+      eventId: string,
+      recipientsIds: Array<string>,
+      messages: Array<Object>,
     }) => {
       toSendMessage({
         firebaseDB,
@@ -206,7 +219,7 @@ const ChatProviderWrapper = (firebaseDB: any, ComposedComponent: Object) => {
       webMessageTransform: Function,
     }) => {
       const { messagesCount } = this.state
-      const updatedMsgsCount = messagesCount + MESSAGE_PACKAGE_COUNT
+      const updatedMsgsCount = messagesCount + packageCount
       // draft
       // .startAt(this.state.last || 0)
       // .limitToFirst(5)
@@ -319,7 +332,7 @@ const ChatProviderWrapper = (firebaseDB: any, ComposedComponent: Object) => {
           loadMoreMessages={this.loadMoreMessages}
           unsubscribeChatMessages={this.unsubscribeChatMessages}
           onSend={this.onSend}
-          chatProps={{ ...this.state, MESSAGE_PACKAGE_COUNT }}
+          chatProps={{ ...this.state, packageCount }}
           resetChat={this.resetChat}
           loadMore={this.loadMoreMessages}
           checkForChat={this.checkForChat}

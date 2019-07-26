@@ -8477,6 +8477,8 @@ var emptyFunc = function emptyFunc() {
 };
 
 var ChatProviderWrapper = function ChatProviderWrapper(firebaseDB, ComposedComponent) {
+  var packageCount = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : MESSAGE_PACKAGE_COUNT;
+
   var ChatProvider = function (_React$Component) {
     inherits(ChatProvider, _React$Component);
 
@@ -8503,7 +8505,7 @@ var ChatProviderWrapper = function ChatProviderWrapper(firebaseDB, ComposedCompo
           // we want to fetch first N messages at once
 
           if (!newChat && initialLoad) {
-            chatMessagesRef(firebaseDB, chatId).orderByChild('createdAt').limitToLast(MESSAGE_PACKAGE_COUNT).on('value', function (messagesSnap) {
+            chatMessagesRef(firebaseDB, chatId).orderByChild('createdAt').limitToLast(packageCount).on('value', function (messagesSnap) {
               /*
               * Here we fetch first batch of the messages at once and process them for the chat
               * component. After that we push them to state, mark initial load as done and unsubsribe
@@ -8529,7 +8531,7 @@ var ChatProviderWrapper = function ChatProviderWrapper(firebaseDB, ComposedCompo
               chatMessagesRef(firebaseDB, chatId).off('value');
             });
           } else {
-            chatMessagesRef(firebaseDB, chatId).orderByChild('createdAt').limitToLast(MESSAGE_PACKAGE_COUNT).on('child_added', function (messageSnippet) {
+            chatMessagesRef(firebaseDB, chatId).orderByChild('createdAt').limitToLast(packageCount).on('child_added', function (messageSnippet) {
               var message = listnerSingleMessageTransform(messageSnippet, participants)(messageSnippet.val());
 
               // We have to check for duplicates since we get already fetched node as well after
@@ -8619,7 +8621,7 @@ var ChatProviderWrapper = function ChatProviderWrapper(firebaseDB, ComposedCompo
             webMessageTransform = _ref5.webMessageTransform;
         var messagesCount = _this.state.messagesCount;
 
-        var updatedMsgsCount = messagesCount + MESSAGE_PACKAGE_COUNT;
+        var updatedMsgsCount = messagesCount + packageCount;
         // draft
         // .startAt(this.state.last || 0)
         // .limitToFirst(5)
@@ -8709,7 +8711,7 @@ var ChatProviderWrapper = function ChatProviderWrapper(firebaseDB, ComposedCompo
           }, _callee, _this2);
         }));
 
-        return function (_x) {
+        return function (_x2) {
           return _ref8.apply(this, arguments);
         };
       }(), _this.getGroupChatsByEvent = function (eventId) {
@@ -8727,7 +8729,7 @@ var ChatProviderWrapper = function ChatProviderWrapper(firebaseDB, ComposedCompo
           loadMoreMessages: this.loadMoreMessages,
           unsubscribeChatMessages: this.unsubscribeChatMessages,
           onSend: this.onSend,
-          chatProps: _extends({}, this.state, { MESSAGE_PACKAGE_COUNT: MESSAGE_PACKAGE_COUNT }),
+          chatProps: _extends({}, this.state, { packageCount: packageCount }),
           resetChat: this.resetChat,
           loadMore: this.loadMoreMessages,
           checkForChat: this.checkForChat,
