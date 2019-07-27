@@ -104,11 +104,6 @@ export const createEmptyChat = (
     return newResult
   }, {})
 
-  // When creating new chat also include such properties as users(participants) and eventId
-  // const chatMetaUpdate = {
-  //   [`chat-metadata/${chatId}`]: meta,
-  // }
-
   const entireUpdate = {
     // TODO THIS FOR ALL RECIPIENTS >>>>
     [`user-chats/${userId}/${chatId}/lastMessageCreatedAt`]: lastMessageTimeStamp,
