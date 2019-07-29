@@ -8405,11 +8405,6 @@ var createEmptyChat = function createEmptyChat(firebaseDB, chatId, userId, event
     return newResult;
   }, {});
 
-  // When creating new chat also include such properties as users(participants) and eventId
-  // const chatMetaUpdate = {
-  //   [`chat-metadata/${chatId}`]: meta,
-  // }
-
   var entireUpdate = _extends((_babelHelpers$extends2 = {}, defineProperty(_babelHelpers$extends2, 'user-chats/' + userId + '/' + chatId + '/lastMessageCreatedAt', lastMessageTimeStamp), defineProperty(_babelHelpers$extends2, 'chat-metadata/' + chatId, meta), _babelHelpers$extends2), lastMessageCreatedAtUpdate);
 
   firebaseDB.update(entireUpdate);
