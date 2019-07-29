@@ -67,7 +67,7 @@ export const listnerSingleMessageTransform = (messageSnippet: Object, participan
   )
 
 // Transform data into FlatList requires shape
-export const toFlatList = (userChats: Array<any>) => R.compose(
+export const toFlatList = (userChats: Object) => R.compose(
   R.reverse,
   R.sortBy(R.prop('lastMessageCreatedAt')),
   R.values,

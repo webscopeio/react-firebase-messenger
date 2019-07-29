@@ -1,16 +1,17 @@
 // @flow
 import React from 'react'
 import * as R from 'ramda'
-
 import {
-  chatMessagefRef,
+  chatMessagesRef,
   usersRef,
 } from '../firebase/references'
+
 import {
-  toSendMessage,
   checkForChatExistence,
+  toSendMessage,
   getGroupChatsByEvent,
 } from '../firebase/calls'
+
 import {
   getMessagesIds,
   listnerSingleMessageTransform,
@@ -24,26 +25,33 @@ type Props = {
 }
 
 type State = {
+  initialLoad: boolean,
+  isLoadingEarlier: boolean,
+  hasMoreToLoad: boolean,
   messages: Array<Message>,
   messagesCount: number,
   tempChatIdStore: string,
-  initialLoad: boolean,
 }
 
 const MESSAGE_PACKAGE_COUNT = 10
 const chatDefaultState = {
+  initialLoad: true,
+  isLoadingEarlier: false,
   messages: [],
   messagesCount: 0,
   tempChatIdStore: '',
-  initialLoad: true,
+  hasMoreToLoad: true,
 }
 
 const emptyFunc = () => null
 
-const ChatProviderWrapper = (firebaseDB: any, ComposedComponent: Object) => {
+const ChatProviderWrapper = (
+  firebaseDB: any,
+  ComposedComponent: Object,
+  packageCount: number = MESSAGE_PACKAGE_COUNT,
+) => {
   class ChatProvider extends React.Component<Props, State> {
     state = chatDefaultState
-
     resetChat = (callback: Function) => this.setState(chatDefaultState, callback || emptyFunc)
 
     chatListner = ({
@@ -52,14 +60,14 @@ const ChatProviderWrapper = (firebaseDB: any, ComposedComponent: Object) => {
     }: {
       participants: Object,
       webMessageTransform: boolean,
-    }) => (chatId: string) => {
+    }) => (chatId: string, newChat?: boolean) => {
       const { initialLoad } = this.state
 
       // we want to fetch first N messages at once
-      if (initialLoad) {
-        chatMessagefRef(firebaseDB, chatId)
+      if (!newChat && initialLoad) {
+        chatMessagesRef(firebaseDB, chatId)
           .orderByChild('createdAt')
-          .limitToLast(MESSAGE_PACKAGE_COUNT)
+          .limitToLast(packageCount)
           .on('value', (messagesSnap) => {
             /*
             * Here we fetch first batch of the messages at once and process them for the chat
@@ -91,12 +99,12 @@ const ChatProviderWrapper = (firebaseDB: any, ComposedComponent: Object) => {
               initialLoad: false,
             })
 
-            chatMessagefRef(firebaseDB, chatId).off('value')
+            chatMessagesRef(firebaseDB, chatId).off('value')
           })
       } else {
-        chatMessagefRef(firebaseDB, chatId)
+        chatMessagesRef(firebaseDB, chatId)
           .orderByChild('createdAt')
-          .limitToLast(MESSAGE_PACKAGE_COUNT)
+          .limitToLast(packageCount)
           .on('child_added', (messageSnippet) => {
             const message = listnerSingleMessageTransform(messageSnippet, participants)(
               messageSnippet.val()
@@ -116,6 +124,7 @@ const ChatProviderWrapper = (firebaseDB: any, ComposedComponent: Object) => {
             this.setState({
               messages: updatedMesseges,
               messagesCount: this.state.messagesCount + 1,
+              initialLoad: false,
             })
           })
       }
@@ -138,27 +147,32 @@ const ChatProviderWrapper = (firebaseDB: any, ComposedComponent: Object) => {
         lastMessageAuthorId: uid,
         users: {},
         eventId,
+        // now all of them are private by default
+        type: 'private',
       }
       const participants = R.concat([uid], recipientsIds)
-
 
       participants.forEach((id) => {
         newChatMetaUpdate.users[id] = true
       })
 
-      toSendMessage(
+      toSendMessage({
         firebaseDB,
-        newChatId,
-        uid,
+        chatId: newChatId,
+        userId: uid,
         messages,
         eventId,
         recipientsIds,
-        newChatMetaUpdate,
-        true
-      )
+        meta: newChatMetaUpdate,
+        createNewChat: true,
+        // now all of them are private by default
+        createPrivateChat: true,
+      })
 
-      /* eslint-disable react/no-unused-state */
-      this.setState({ tempChatIdStore: newChatId })
+      this.setState({
+        /* eslint-disable react/no-unused-state */
+        tempChatIdStore: newChatId,
+      })
     }
 
     onSend = ({
@@ -174,23 +188,24 @@ const ChatProviderWrapper = (firebaseDB: any, ComposedComponent: Object) => {
       recipientsIds: Array<string>,
       messages: Array<Object>,
     }) => {
-      toSendMessage(
+      toSendMessage({
         firebaseDB,
         chatId,
-        uid,
+        userId: uid,
         messages,
         eventId,
         recipientsIds,
-        {
+        meta: {
           lastMessageText: R.last(messages).text,
           lastMessageCreatedAt: R.last(messages).createdAt,
           lastMessageAuthorId: uid,
-        }
-      )
+        },
+      })
     }
 
-    /* eslint-disable-next-line */
-    unsubscribeChatMessages = (chatId: string) => chatMessagefRef(firebaseDB, chatId).off()
+    unsubscribeChatMessages = (chatId: string) =>
+      chatMessagesRef(firebaseDB, chatId)
+        .off()
 
     loadMoreMessages = ({
       chatId,
@@ -204,40 +219,44 @@ const ChatProviderWrapper = (firebaseDB: any, ComposedComponent: Object) => {
       webMessageTransform: Function,
     }) => {
       const { messagesCount } = this.state
-      const updatedMsgsCount = messagesCount + MESSAGE_PACKAGE_COUNT
+      const updatedMsgsCount = messagesCount + packageCount
       // draft
       // .startAt(this.state.last || 0)
       // .limitToFirst(5)
       // TODO fetch interval 5/+5/+5/...
 
-      // chatMessagefRef(firebaseDBRef, chatId).keepSynced(true) // TODO maybe do it better way
+      // chatMessagesRef(firebaseDBRef, chatId).keepSynced(true) // TODO maybe do it better way
       // fetch last 5/10/15/20/...
 
-      chatMessagefRef(firebaseDB, chatId)
-        .orderByChild('createdAt')
-        .limitToLast(updatedMsgsCount)
-        .once('value') // TODO via on and unsubscription
-        .then((chatMsgs) => {
-          const messagesFromDB = chatMsgs.val()
+      this.setState({ isLoadingEarlier: true }, () => {
+        chatMessagesRef(firebaseDB, chatId)
+          .orderByChild('createdAt')
+          .limitToLast(updatedMsgsCount)
+          .once('value') // TODO via on and unsubscription
+          .then((chatMsgs) => {
+            const messagesFromDB = chatMsgs.val()
 
-          if (R.values(messagesFromDB).length > this.state.messages.length) {
-            // add to message's id to other message's object
-            chatMsgs.forEach((item) => {
-              /* eslint-disable no-underscore-dangle */
-              messagesFromDB[item.key]._id = item.key
-            })
+            if (R.values(messagesFromDB).length > this.state.messages.length) {
+              // add to message's id to other message's object
+              chatMsgs.forEach((item) => {
+                /* eslint-disable no-underscore-dangle */
+                messagesFromDB[item.key]._id = item.key
+              })
 
-            const loadedMessages =
-              loadMoreMessagesListTransform(participants)(messagesFromDB)
+              const loadedMessages = loadMoreMessagesListTransform(participants)(messagesFromDB)
+              const hasMoreToLoad = loadedMessages.length === updatedMsgsCount
 
-            this.setState({
-              messages: webMessageTransform
-                ? loadedMessages
-                : R.reverse(loadedMessages),
-              messagesCount: updatedMsgsCount,
-            }, callBack || emptyFunc)
-          }
-        })
+              this.setState({
+                hasMoreToLoad,
+                isLoadingEarlier: false,
+                messages: webMessageTransform
+                  ? loadedMessages
+                  : R.reverse(loadedMessages),
+                messagesCount: updatedMsgsCount,
+              }, callBack || emptyFunc)
+            }
+          })
+      })
     }
 
     markMessagesRead = ({
@@ -313,7 +332,7 @@ const ChatProviderWrapper = (firebaseDB: any, ComposedComponent: Object) => {
           loadMoreMessages={this.loadMoreMessages}
           unsubscribeChatMessages={this.unsubscribeChatMessages}
           onSend={this.onSend}
-          chatProps={this.state}
+          chatProps={{ ...this.state, packageCount }}
           resetChat={this.resetChat}
           loadMore={this.loadMoreMessages}
           checkForChat={this.checkForChat}

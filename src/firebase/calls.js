@@ -8,7 +8,16 @@ import {
 import type { Message } from '../common/flow'
 
 // To send and store message on fdb
-export const toSendMessage = (
+export const toSendMessage = ({
+  firebaseDB,
+  chatId,
+  userId,
+  messages,
+  eventId,
+  recipientsIds,
+  meta,
+  createNewChat,
+}: {
   firebaseDB: Object,
   chatId: string,
   userId: string,
@@ -16,8 +25,8 @@ export const toSendMessage = (
   eventId: string,
   recipientsIds: Array<string>,
   meta: Object,
-  createNewChat: ?boolean,
-) => {
+  createNewChat?: boolean,
+}) => {
   const lastMessageTimeStamp = toUnixTimestamp(meta.lastMessageCreatedAt)
   const msgs = transformMessagesToStoreInDB(userId)(messages)
 
@@ -94,11 +103,6 @@ export const createEmptyChat = (
     )(result)
     return newResult
   }, {})
-
-  // When creating new chat also include such properties as users(participants) and eventId
-  // const chatMetaUpdate = {
-  //   [`chat-metadata/${chatId}`]: meta,
-  // }
 
   const entireUpdate = {
     // TODO THIS FOR ALL RECIPIENTS >>>>

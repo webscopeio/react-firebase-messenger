@@ -35,7 +35,7 @@ class ChatListProvider extends React.Component<Props, State> {
     // eventId,
     uid,
   }: {
-    eventId: string,
+    // eventId: string,
     uid: string,
   }) => {
     const { firebaseDBRef } = this.props
@@ -56,6 +56,7 @@ class ChatListProvider extends React.Component<Props, State> {
               loading: false,
             })
           }
+
           const chatsIds = Object.keys(chatsMetaValues || {})
           const allChatsParticipants = {}
 
@@ -76,7 +77,10 @@ class ChatListProvider extends React.Component<Props, State> {
                     new Promise(resolve => usersRef(firebaseDBRef, participantId)
                       .on('value', (userSnapshot) => {
                         const userInfo = userSnapshot.val()
-                        const userData = { ...userInfo, uid: participantId }
+                        const userData = {
+                          ...userInfo,
+                          uid: participantId,
+                        }
 
                         chatMetas = R.compose(
                           R.evolve({
@@ -94,9 +98,9 @@ class ChatListProvider extends React.Component<Props, State> {
                 }))
               })
           ))).then((data) => {
-            Object.keys(allChatsParticipants).map(participantId =>
+            Object.keys(allChatsParticipants).map(participantId => (
               usersRef(firebaseDBRef, participantId).off()
-            )
+            ))
 
             const chats = data.reduce((acc, cur) => ({ ...acc, ...cur }), {})
             this.setState({
