@@ -40,78 +40,88 @@ class ChatListProvider extends React.Component<Props, State> {
     uid: string,
   }) => {
     const { firebaseDBRef } = this.props
+    try {
+      if (uid) {
+        userChatsAllRef(firebaseDBRef, uid)
+          .orderByChild('lastMessageCreatedAt')
+          // .limitToLast(5) // TODO pagination
+          /* eslint-disable consistent-return */
+          .on('value', (chatsSnapshot) => {
+            const chatsMetaValues = chatsSnapshot.val()
 
-    if (uid) {
-      userChatsAllRef(firebaseDBRef, uid)
-        .orderByChild('lastMessageCreatedAt')
-        // .limitToLast(5) // TODO pagination
-        /* eslint-disable consistent-return */
-        .on('value', (chatsSnapshot) => {
-          const chatsMetaValues = chatsSnapshot.val()
-
-          if (
-            !chatsMetaValues ||
-            !Object.keys(chatsMetaValues).length
-          ) {
-            return this.setState({
-              loading: false,
-            })
-          }
-
-          const chatsIds = Object.keys(chatsMetaValues || {})
-          const allChatsParticipants = {}
-
-          Promise.all(chatsIds.map(chatId => new Promise(res =>
-            chatMetadataRef(firebaseDBRef, chatId)
-              .on('value', (chatMetaSnapshot) => {
-                let chatMetas = R.compose(
-                  R.evolve({
-                    users: R.dissoc(uid), // dissoc THE user
-                  }),
-                  R.assoc('participants', [])
-                )(chatMetaSnapshot.val())
-
-                chatMetas.unseenMessages = chatsMetaValues[chatId].unreadCount
-
-                Promise.all(
-                  R.keys(chatMetas.users).map(participantId =>
-                    new Promise(resolve => usersRef(firebaseDBRef, participantId)
-                      .on('value', (userSnapshot) => {
-                        const userInfo = userSnapshot.val()
-                        const userData = {
-                          ...userInfo,
-                          uid: participantId,
-                        }
-
-                        chatMetas = R.compose(
-                          R.evolve({
-                            participants: R.append(userData),
-                          }),
-                        )(chatMetas)
-
-                        allChatsParticipants[participantId] = true
-
-                        resolve()
-                      }))
-                  )
-                ).then(() => res({
-                  [chatId]: chatMetas,
-                }))
+            if (
+              !chatsMetaValues ||
+              !Object.keys(chatsMetaValues).length
+            ) {
+              return this.setState({
+                loading: false,
               })
-          ))).then((data) => {
-            Object.keys(allChatsParticipants).map(participantId => (
-              usersRef(firebaseDBRef, participantId).off()
-            ))
+            }
 
-            const chats = data.reduce((acc, cur) => ({ ...acc, ...cur }), {})
-            this.setState({
-              chatsData: toFlatList(chats),
-              loading: false,
-              userChats: chats,
-            })
+            const chatsIds = Object.keys(chatsMetaValues || {})
+            const allChatsParticipants = {}
+
+            Promise.all(chatsIds.map(chatId => new Promise(res =>
+              chatMetadataRef(firebaseDBRef, chatId)
+                .on('value', (chatMetaSnapshot) => {
+                  let chatMetas = R.compose(
+                    R.evolve({
+                      users: R.dissoc(uid), // dissoc THE user
+                    }),
+                    R.assoc('participants', [])
+                  )(chatMetaSnapshot.val())
+
+                  chatMetas.unseenMessages = chatsMetaValues[chatId].unreadCount
+
+                  Promise.all(
+                    R.keys(chatMetas.users)
+                      .map(participantId =>
+                        new Promise(resolve => usersRef(firebaseDBRef, participantId)
+                          .on('value', (userSnapshot) => {
+                            const userInfo = userSnapshot.val()
+                            const userData = {
+                              ...userInfo,
+                              uid: participantId,
+                            }
+
+                            chatMetas = R.compose(
+                              R.evolve({
+                                participants: R.append(userData),
+                              }),
+                            )(chatMetas)
+
+                            allChatsParticipants[participantId] = true
+
+                            resolve()
+                          }))
+                      )
+                  )
+                    .then(() => res({
+                      [chatId]: chatMetas,
+                    }))
+                })
+            )))
+              .then((data) => {
+                Object.keys(allChatsParticipants)
+                  .map(participantId => (
+                    usersRef(firebaseDBRef, participantId)
+                      .off()
+                  ))
+
+                const chats = data.reduce((acc, cur) => ({ ...acc, ...cur }), {})
+                this.setState({
+                  chatsData: toFlatList(chats),
+                  loading: false,
+                  userChats: chats,
+                })
+              })
           })
-        })
-        .catch(error => this.setState({ loading: false, error }))
+      }
+    } catch (error) {
+      this.setState({
+        loading: false,
+        error,
+      })
     }
   }
 
