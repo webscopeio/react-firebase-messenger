@@ -11,11 +11,11 @@ import {
 import { toFlatList } from '../helpers/transformations'
 import type { UserChatsEntity } from '../common/flow'
 
-// TODO
 type State = {|
   userChats: { [chatId: string]: UserChatsEntity },
   chatsData: Array<UserChatsEntity>,
   loading: boolean,
+  error: false | Object,
 |}
 
 type Props = {|
@@ -27,6 +27,7 @@ class ChatListProvider extends React.Component<Props, State> {
   state = {
     /* eslint-disable react/no-unused-state */
     chatsData: [],
+    error: false,
     loading: true,
     userChats: {},
   }
@@ -110,6 +111,7 @@ class ChatListProvider extends React.Component<Props, State> {
             })
           })
         })
+        .catch(error => this.setState({ loading: false, error }))
     }
   }
 
