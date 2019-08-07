@@ -8229,8 +8229,6 @@ var possibleConstructorReturn = function (self, call) {
   return call && (typeof call === "object" || typeof call === "function") ? call : self;
 };
 
-// TODO
-
 var ChatListProvider = function (_React$Component) {
   inherits(ChatListProvider, _React$Component);
 
@@ -8248,6 +8246,7 @@ var ChatListProvider = function (_React$Component) {
     return _ret = (_temp = (_this = possibleConstructorReturn(this, (_ref = ChatListProvider.__proto__ || Object.getPrototypeOf(ChatListProvider)).call.apply(_ref, [this].concat(args))), _this), _this.state = {
       /* eslint-disable react/no-unused-state */
       chatsData: [],
+      error: false,
       loading: true,
       userChats: {}
     }, _this.chatListDataFetch = function (_ref2) {
@@ -8316,6 +8315,8 @@ var ChatListProvider = function (_React$Component) {
               userChats: chats
             });
           });
+        }).catch(function (error) {
+          return _this.setState({ loading: false, error: error });
         });
       }
     }, _this.unsubscribeChatsData = function (_ref3) {
