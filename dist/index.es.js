@@ -8246,70 +8246,74 @@ var ChatListProvider = function (_React$Component) {
       var uid = _ref2.uid;
       var firebaseDBRef = _this.props.firebaseDBRef;
 
+      try {
+        if (uid) {
+          userChatsAllRef(firebaseDBRef, uid).orderByChild('lastMessageCreatedAt')
+          // .limitToLast(5) // TODO pagination
+          /* eslint-disable consistent-return */
+          .on('value', function (chatsSnapshot) {
+            var chatsMetaValues = chatsSnapshot.val();
 
-      if (uid) {
-        userChatsAllRef(firebaseDBRef, uid).orderByChild('lastMessageCreatedAt')
-        // .limitToLast(5) // TODO pagination
-        /* eslint-disable consistent-return */
-        .on('value', function (chatsSnapshot) {
-          var chatsMetaValues = chatsSnapshot.val();
+            if (!chatsMetaValues || !Object.keys(chatsMetaValues).length) {
+              return _this.setState({
+                loading: false
+              });
+            }
 
-          if (!chatsMetaValues || !Object.keys(chatsMetaValues).length) {
-            return _this.setState({
-              loading: false
-            });
-          }
+            var chatsIds = Object.keys(chatsMetaValues || {});
+            var allChatsParticipants = {};
 
-          var chatsIds = Object.keys(chatsMetaValues || {});
-          var allChatsParticipants = {};
+            Promise.all(chatsIds.map(function (chatId) {
+              return new Promise(function (res) {
+                return chatMetadataRef(firebaseDBRef, chatId).on('value', function (chatMetaSnapshot) {
+                  var chatMetas = compose(evolve({
+                    users: dissoc(uid) // dissoc THE user
+                  }), assoc('participants', []))(chatMetaSnapshot.val());
 
-          Promise.all(chatsIds.map(function (chatId) {
-            return new Promise(function (res) {
-              return chatMetadataRef(firebaseDBRef, chatId).on('value', function (chatMetaSnapshot) {
-                var chatMetas = compose(evolve({
-                  users: dissoc(uid) // dissoc THE user
-                }), assoc('participants', []))(chatMetaSnapshot.val());
+                  chatMetas.unseenMessages = chatsMetaValues[chatId].unreadCount;
 
-                chatMetas.unseenMessages = chatsMetaValues[chatId].unreadCount;
+                  Promise.all(keys(chatMetas.users).map(function (participantId) {
+                    return new Promise(function (resolve) {
+                      return usersRef(firebaseDBRef, participantId).on('value', function (userSnapshot) {
+                        var userInfo = userSnapshot.val();
+                        var userData = _extends({}, userInfo, {
+                          uid: participantId
+                        });
 
-                Promise.all(keys(chatMetas.users).map(function (participantId) {
-                  return new Promise(function (resolve) {
-                    return usersRef(firebaseDBRef, participantId).on('value', function (userSnapshot) {
-                      var userInfo = userSnapshot.val();
-                      var userData = _extends({}, userInfo, {
-                        uid: participantId
+                        chatMetas = compose(evolve({
+                          participants: append(userData)
+                        }))(chatMetas);
+
+                        allChatsParticipants[participantId] = true;
+
+                        resolve();
                       });
-
-                      chatMetas = compose(evolve({
-                        participants: append(userData)
-                      }))(chatMetas);
-
-                      allChatsParticipants[participantId] = true;
-
-                      resolve();
                     });
+                  })).then(function () {
+                    return res(defineProperty({}, chatId, chatMetas));
                   });
-                })).then(function () {
-                  return res(defineProperty({}, chatId, chatMetas));
                 });
               });
-            });
-          })).then(function (data) {
-            Object.keys(allChatsParticipants).map(function (participantId) {
-              return usersRef(firebaseDBRef, participantId).off();
-            });
+            })).then(function (data) {
+              Object.keys(allChatsParticipants).map(function (participantId) {
+                return usersRef(firebaseDBRef, participantId).off();
+              });
 
-            var chats = data.reduce(function (acc, cur) {
-              return _extends({}, acc, cur);
-            }, {});
-            _this.setState({
-              chatsData: toFlatList(chats),
-              loading: false,
-              userChats: chats
+              var chats = data.reduce(function (acc, cur) {
+                return _extends({}, acc, cur);
+              }, {});
+              _this.setState({
+                chatsData: toFlatList(chats),
+                loading: false,
+                userChats: chats
+              });
             });
           });
-        }).catch(function (error) {
-          return _this.setState({ loading: false, error: error });
+        }
+      } catch (error) {
+        _this.setState({
+          loading: false,
+          error: error
         });
       }
     }, _this.unsubscribeChatsData = function (_ref3) {
