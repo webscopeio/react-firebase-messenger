@@ -4,7 +4,6 @@ import * as R from 'ramda'
 
 import {
   chatMetadataRef,
-  userEventAllChatsRef,
   usersRef,
   userChatsAllRef,
 } from '../firebase/references'
@@ -32,6 +31,8 @@ class ChatListProvider extends React.Component<Props, State> {
     userChats: {},
   }
 
+  chatListenerRef = null
+  chatMetadatasListenerRef = []
   chatListDataFetch = ({
     // eventId,
     uid,
@@ -41,7 +42,7 @@ class ChatListProvider extends React.Component<Props, State> {
   }) => {
     const { firebaseDBRef } = this.props
     if (uid) {
-      userChatsAllRef(firebaseDBRef, uid)
+      this.chatListenerRef = userChatsAllRef(firebaseDBRef, uid)
         .orderByChild('lastMessageCreatedAt')
         // .limitToLast(5) // TODO pagination
         /* eslint-disable consistent-return */
@@ -60,14 +61,14 @@ class ChatListProvider extends React.Component<Props, State> {
           const chatsIds = Object.keys(chatsMetaValues || {})
           const allChatsParticipants = {}
 
-          Promise.all(chatsIds.map(chatId => new Promise(res =>
-            chatMetadataRef(firebaseDBRef, chatId)
+          Promise.all(chatsIds.map(chatId => new Promise((res) => {
+            const chatMetaRef = chatMetadataRef(firebaseDBRef, chatId)
               .on('value', (chatMetaSnapshot) => {
                 let chatMetas = R.compose(
                   R.evolve({
                     users: R.dissoc(uid), // dissoc THE user
                   }),
-                  R.assoc('participants', [])
+                  R.assoc('participants', []),
                 )(chatMetaSnapshot.val())
 
                 chatMetas.unseenMessages = chatsMetaValues[chatId].unreadCount
@@ -92,13 +93,16 @@ class ChatListProvider extends React.Component<Props, State> {
                           allChatsParticipants[participantId] = true
 
                           resolve()
-                        }))
-                    )
+                        })),
+                    ),
                 )
                   .then(() => res({
                     [chatId]: chatMetas,
                   }))
               })
+            this.chatMetadatasListenerRef.push(chatMetaRef)
+            return chatMetaRef
+          }
           )))
             .then((data) => {
               Object.keys(allChatsParticipants)
@@ -129,17 +133,16 @@ class ChatListProvider extends React.Component<Props, State> {
     }
   }
 
-  unsubscribeChatsData = ({
-    eventId,
-    uid,
-  }: {
-    eventId: string,
-    uid: string,
-  }) => {
-    const { firebaseDBRef } = this.props
+  unsubscribeChatsData = () => {
+    if (this.chatListenerRef) {
+      this.chatListenerRef.off()
+    }
 
-    userEventAllChatsRef(firebaseDBRef, uid, eventId).off()
-    firebaseDBRef.child('chat-metadata').off()
+    this.chatMetadatasListenerRef.forEach((metadataRef) => {
+      if (metadataRef) {
+        metadataRef.off()
+      }
+    })
   }
 
   render() {
