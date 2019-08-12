@@ -3524,10 +3524,6 @@ var chatMetadataRef = function chatMetadataRef(firebaseDB, chatId) {
   return firebaseDB.child("chat-metadata/" + chatId);
 };
 
-var userEventAllChatsRef = function userEventAllChatsRef(firebaseDB, userId, eventId) {
-  return firebaseDB.child("user-event-chats/" + userId + "/" + eventId);
-};
-
 var userChatsAllRef = function userChatsAllRef(firebaseDB, userId) {
   return firebaseDB.child("user-chats/" + userId);
 };
@@ -8249,12 +8245,12 @@ var ChatListProvider = function (_React$Component) {
       error: false,
       loading: true,
       userChats: {}
-    }, _this.chatListDataFetch = function (_ref2) {
+    }, _this.chatListenerRef = null, _this.chatMetadatasListenerRef = [], _this.chatListDataFetch = function (_ref2) {
       var uid = _ref2.uid;
       var firebaseDBRef = _this.props.firebaseDBRef;
 
       if (uid) {
-        userChatsAllRef(firebaseDBRef, uid).orderByChild('lastMessageCreatedAt')
+        _this.chatListenerRef = userChatsAllRef(firebaseDBRef, uid).orderByChild('lastMessageCreatedAt')
         // .limitToLast(5) // TODO pagination
         /* eslint-disable consistent-return */
         .on('value', function (chatsSnapshot) {
@@ -8271,7 +8267,7 @@ var ChatListProvider = function (_React$Component) {
 
           Promise.all(chatsIds.map(function (chatId) {
             return new Promise(function (res) {
-              return chatMetadataRef(firebaseDBRef, chatId).on('value', function (chatMetaSnapshot) {
+              var chatMetaRef = chatMetadataRef(firebaseDBRef, chatId).on('value', function (chatMetaSnapshot) {
                 var chatMetas = compose(evolve({
                   users: dissoc(uid) // dissoc THE user
                 }), assoc('participants', []))(chatMetaSnapshot.val());
@@ -8299,6 +8295,8 @@ var ChatListProvider = function (_React$Component) {
                   return res(defineProperty({}, chatId, chatMetas));
                 });
               });
+              _this.chatMetadatasListenerRef.push(chatMetaRef);
+              return chatMetaRef;
             });
           })).then(function (data) {
             Object.keys(allChatsParticipants).map(function (participantId) {
@@ -8326,14 +8324,16 @@ var ChatListProvider = function (_React$Component) {
           });
         });
       }
-    }, _this.unsubscribeChatsData = function (_ref3) {
-      var eventId = _ref3.eventId,
-          uid = _ref3.uid;
-      var firebaseDBRef = _this.props.firebaseDBRef;
+    }, _this.unsubscribeChatsData = function () {
+      if (_this.chatListenerRef) {
+        _this.chatListenerRef.off();
+      }
 
-
-      userEventAllChatsRef(firebaseDBRef, uid, eventId).off();
-      firebaseDBRef.child('chat-metadata').off();
+      _this.chatMetadatasListenerRef.forEach(function (metadataRef) {
+        if (metadataRef) {
+          metadataRef.off();
+        }
+      });
     }, _temp), possibleConstructorReturn(_this, _ret);
   }
 
