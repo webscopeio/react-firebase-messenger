@@ -26,6 +26,10 @@ class Example extends Component {
 }
 ```
 
+## Linking
+For debugging in linked packages use `wml` https://github.com/wix/wml and not npm link, you will save yourself a lot of issues
+
+
 ## License
 
 MIT © [Webscope.io](https://github.com/Webscope.io)

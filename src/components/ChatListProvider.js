@@ -43,9 +43,10 @@ class ChatListProvider extends React.Component<Props, State> {
     const { firebaseDBRef } = this.props
     if (uid) {
       this.chatListenerRef = userChatsAllRef(firebaseDBRef, uid)
+      // .limitToLast(5) // TODO pagination
+      /* eslint-disable consistent-return */
+      this.chatListenerRef
         .orderByChild('lastMessageCreatedAt')
-        // .limitToLast(5) // TODO pagination
-        /* eslint-disable consistent-return */
         .on('value', (chatsSnapshot) => {
           const chatsMetaValues = chatsSnapshot.val()
 
@@ -63,6 +64,7 @@ class ChatListProvider extends React.Component<Props, State> {
 
           Promise.all(chatsIds.map(chatId => new Promise((res) => {
             const chatMetaRef = chatMetadataRef(firebaseDBRef, chatId)
+            const chatMetaListener = chatMetadataRef(firebaseDBRef, chatId)
               .on('value', (chatMetaSnapshot) => {
                 let chatMetas = R.compose(
                   R.evolve({
@@ -101,7 +103,7 @@ class ChatListProvider extends React.Component<Props, State> {
                   }))
               })
             this.chatMetadatasListenerRef.push(chatMetaRef)
-            return chatMetaRef
+            return chatMetaListener
           }
           )))
             .then((data) => {

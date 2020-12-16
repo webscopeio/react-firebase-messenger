@@ -8250,10 +8250,10 @@ var ChatListProvider = function (_React$Component) {
       var firebaseDBRef = _this.props.firebaseDBRef;
 
       if (uid) {
-        _this.chatListenerRef = userChatsAllRef(firebaseDBRef, uid).orderByChild('lastMessageCreatedAt')
+        _this.chatListenerRef = userChatsAllRef(firebaseDBRef, uid);
         // .limitToLast(5) // TODO pagination
         /* eslint-disable consistent-return */
-        .on('value', function (chatsSnapshot) {
+        _this.chatListenerRef.orderByChild('lastMessageCreatedAt').on('value', function (chatsSnapshot) {
           var chatsMetaValues = chatsSnapshot.val();
 
           if (!chatsMetaValues || !Object.keys(chatsMetaValues).length) {
@@ -8267,7 +8267,8 @@ var ChatListProvider = function (_React$Component) {
 
           Promise.all(chatsIds.map(function (chatId) {
             return new Promise(function (res) {
-              var chatMetaRef = chatMetadataRef(firebaseDBRef, chatId).on('value', function (chatMetaSnapshot) {
+              var chatMetaRef = chatMetadataRef(firebaseDBRef, chatId);
+              var chatMetaListener = chatMetadataRef(firebaseDBRef, chatId).on('value', function (chatMetaSnapshot) {
                 var chatMetas = compose(evolve({
                   users: dissoc(uid) // dissoc THE user
                 }), assoc('participants', []))(chatMetaSnapshot.val());
@@ -8296,7 +8297,7 @@ var ChatListProvider = function (_React$Component) {
                 });
               });
               _this.chatMetadatasListenerRef.push(chatMetaRef);
-              return chatMetaRef;
+              return chatMetaListener;
             });
           })).then(function (data) {
             Object.keys(allChatsParticipants).map(function (participantId) {
