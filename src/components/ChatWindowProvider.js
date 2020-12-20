@@ -68,7 +68,8 @@ const ChatProviderWrapper = (
         chatMessagesRef(firebaseDB, chatId)
           .orderByChild('createdAt')
           .limitToLast(packageCount)
-          .on('value', (messagesSnap) => {
+          .once('value')
+          .then((messagesSnap) => {
             /*
             * Here we fetch first batch of the messages at once and process them for the chat
             * component. After that we push them to state, mark initial load as done and unsubsribe
@@ -86,20 +87,11 @@ const ChatProviderWrapper = (
               processedMessages.push(message)
             })
 
-            const updatedMesseges = R.concat(
-              !webMessageTransform
-                ? processedMessages.reverse()
-                : processedMessages,
-              this.state.messages
-            )
-
             this.setState({
-              messages: updatedMesseges,
-              messagesCount: this.state.messagesCount + processedMessages.length,
+              messages: webMessageTransform ? processedMessages : processedMessages.reverse(),
+              messagesCount: processedMessages.length - this.state.messagesCount,
               initialLoad: false,
             })
-
-            chatMessagesRef(firebaseDB, chatId).off('value')
           })
       } else {
         chatMessagesRef(firebaseDB, chatId)
@@ -197,7 +189,7 @@ const ChatProviderWrapper = (
         recipientsIds,
         meta: {
           lastMessageText: R.last(messages).text,
-          lastMessageCreatedAt: R.last(messages).createdAt,
+          lastMessageCreatedAt: R.last(messages).createdAt || new Date(),
           lastMessageAuthorId: uid,
         },
       })

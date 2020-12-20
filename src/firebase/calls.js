@@ -69,7 +69,7 @@ export const toSendMessage = ({
     }
     : {
       [`chat-metadata/${chatId}/lastMessageAuthorId`]: meta.lastMessageAuthorId,
-      [`chat-metadata/${chatId}/lastMessageCreatedAt`]: meta.lastMessageCreatedAt,
+      [`chat-metadata/${chatId}/lastMessageCreatedAt`]: `${meta.lastMessageCreatedAt.toISOString()}`,
       [`chat-metadata/${chatId}/lastMessageText`]: meta.lastMessageText,
     }
 

@@ -8404,7 +8404,7 @@ var toSendMessage = function toSendMessage(_ref) {
   }, 0);
 
   // When creating new chat also include such properties as users(participants) and eventId
-  var chatMetaUpdate = createNewChat ? defineProperty({}, 'chat-metadata/' + chatId, meta) : (_ref3 = {}, defineProperty(_ref3, 'chat-metadata/' + chatId + '/lastMessageAuthorId', meta.lastMessageAuthorId), defineProperty(_ref3, 'chat-metadata/' + chatId + '/lastMessageCreatedAt', meta.lastMessageCreatedAt), defineProperty(_ref3, 'chat-metadata/' + chatId + '/lastMessageText', meta.lastMessageText), _ref3);
+  var chatMetaUpdate = createNewChat ? defineProperty({}, 'chat-metadata/' + chatId, meta) : (_ref3 = {}, defineProperty(_ref3, 'chat-metadata/' + chatId + '/lastMessageAuthorId', meta.lastMessageAuthorId), defineProperty(_ref3, 'chat-metadata/' + chatId + '/lastMessageCreatedAt', '' + meta.lastMessageCreatedAt.toISOString()), defineProperty(_ref3, 'chat-metadata/' + chatId + '/lastMessageText', meta.lastMessageText), _ref3);
 
   var entireUpdate = _extends(defineProperty({}, 'user-chats/' + userId + '/' + chatId + '/lastMessageCreatedAt', lastMessageTimeStamp), messagesUpdate, unreadMessagesUpdate, lastMessageCreatedAtUpdate, chatMetaUpdate);
 
@@ -8516,7 +8516,7 @@ var ChatProviderWrapper = function ChatProviderWrapper(firebaseDB, ComposedCompo
           // we want to fetch first N messages at once
 
           if (!newChat && initialLoad) {
-            chatMessagesRef(firebaseDB, chatId).orderByChild('createdAt').limitToLast(packageCount).on('value', function (messagesSnap) {
+            chatMessagesRef(firebaseDB, chatId).orderByChild('createdAt').limitToLast(packageCount).once('value').then(function (messagesSnap) {
               /*
               * Here we fetch first batch of the messages at once and process them for the chat
               * component. After that we push them to state, mark initial load as done and unsubsribe
@@ -8531,15 +8531,11 @@ var ChatProviderWrapper = function ChatProviderWrapper(firebaseDB, ComposedCompo
                 processedMessages.push(message);
               });
 
-              var updatedMesseges = concat(!webMessageTransform ? processedMessages.reverse() : processedMessages, _this.state.messages);
-
               _this.setState({
-                messages: updatedMesseges,
-                messagesCount: _this.state.messagesCount + processedMessages.length,
+                messages: webMessageTransform ? processedMessages : processedMessages.reverse(),
+                messagesCount: processedMessages.length - _this.state.messagesCount,
                 initialLoad: false
               });
-
-              chatMessagesRef(firebaseDB, chatId).off('value');
             });
           } else {
             chatMessagesRef(firebaseDB, chatId).orderByChild('createdAt').limitToLast(packageCount).on('child_added', function (messageSnippet) {
@@ -8619,7 +8615,7 @@ var ChatProviderWrapper = function ChatProviderWrapper(firebaseDB, ComposedCompo
           recipientsIds: recipientsIds,
           meta: {
             lastMessageText: last(messages).text,
-            lastMessageCreatedAt: last(messages).createdAt,
+            lastMessageCreatedAt: last(messages).createdAt || new Date(),
             lastMessageAuthorId: uid
           }
         });
