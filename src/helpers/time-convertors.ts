@@ -1,4 +1,3 @@
-// @flow
 import moment from 'moment'
 
 export const toUnixTimestamp = (item: Date): string => moment(item).format('x')

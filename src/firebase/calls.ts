@@ -1,11 +1,10 @@
-// @flow
 import * as R from 'ramda'
-
+import { DatabaseReference, child, off, update, orderByChild, startAt, onValue, query, equalTo } from 'firebase/database'
 import { toUnixTimestamp } from '../helpers/time-convertors'
 import {
   transformMessagesToStoreInDB,
 } from '../helpers/transformations'
-import type { Message } from '../common/flow'
+import type { ChatMessage, ChatMetadata, CollectionObject, Message, UnreadMessage } from '../common/flow'
 
 // To send and store message on fdb
 export const toSendMessage = ({
@@ -18,28 +17,27 @@ export const toSendMessage = ({
   meta,
   createNewChat,
 }: {
-  firebaseDB: Object,
+  firebaseDB: DatabaseReference,
   chatId: string,
   userId: string,
   messages: Array<Message>,
   eventId: string,
   recipientsIds: Array<string>,
-  meta: Object,
+  meta: Pick<ChatMetadata, 'lastMessageAuthorId' | 'lastMessageCreatedAt' | 'lastMessageText'>,
   createNewChat?: boolean,
 }) => {
   const lastMessageTimeStamp = toUnixTimestamp(meta.lastMessageCreatedAt)
   const msgs = transformMessagesToStoreInDB(userId)(messages)
 
-  const messagesUpdate = msgs.reduce((result, message) => {
+  const messagesUpdate = msgs.reduce<CollectionObject<ChatMessage>>((result, message) => {
     // message[0] - author id, message[1] - message data
     const newResult = R.assoc(`chat-messages/${chatId}/${message[0]}`, message[1], result || {})
     return newResult
-  }, 0)
+  }, {})
 
-  const unreadMessagesUpdate = msgs.reduce((result, message) => {
+  const unreadMessagesUpdate = msgs.reduce<CollectionObject<UnreadMessage>>((result, message) => {
     let newResult = result || {}
 
-    // eslint-disable-next-line
     recipientsIds.forEach((recipientId) => {
       if (recipientId !== userId) {
         newResult = R.assoc(`unread-messages/${recipientId}/${message[0]}`, {
@@ -49,9 +47,10 @@ export const toSendMessage = ({
       }
     })
     return newResult
-  }, 0)
+  }, {})
 
-  const lastMessageCreatedAtUpdate = recipientsIds.reduce((result, participantId) => {
+  
+  const lastMessageCreatedAtUpdate = recipientsIds.reduce<CollectionObject<string>>((result, participantId) => {
     const newResult = R.compose(
       R.assoc(`user-chats/${participantId}/${chatId}/lastMessageCreatedAt`, lastMessageTimeStamp),
       /* //
@@ -60,7 +59,7 @@ export const toSendMessage = ({
       */
     )(result || {})
     return newResult
-  }, 0)
+  }, {})
 
   // When creating new chat also include such properties as users(participants) and eventId
   const chatMetaUpdate = createNewChat
@@ -84,16 +83,16 @@ export const toSendMessage = ({
     ...chatMetaUpdate,
   }
 
-  firebaseDB.update(entireUpdate)
+  update(firebaseDB, entireUpdate)
 }
 
 export const createEmptyChat = (
-  firebaseDB: Object,
+  firebaseDB: DatabaseReference,
   chatId: string,
   userId: string,
   eventId: string,
   recipientsIds: Array<string>,
-  meta: Object,
+  meta: ChatMetadata,
 ) => {
   const lastMessageTimeStamp = toUnixTimestamp(meta.lastMessageCreatedAt)
 
@@ -111,19 +110,17 @@ export const createEmptyChat = (
     ...lastMessageCreatedAtUpdate,
   }
 
-  firebaseDB.update(entireUpdate)
+  update(firebaseDB, entireUpdate)
 }
 
 export const addUserToChat = (
-  firebaseDB: any,
+  firebaseDB: DatabaseReference,
   uid: string,
   chatId: string,
 ) => {
-  const upp = new Promise((resolve) => {
-    firebaseDB.child(`chat-metadata/${chatId}`)
-      .on('value', (snap) => {
-        resolve(snap.val())
-      })
+  const upp: Promise<ChatMetadata> = new Promise((resolve) => {
+    const childRef = child(firebaseDB, `chat-metadata/${chatId}`)
+    return onValue(childRef, snap => resolve(snap.val()))
   })
 
   upp.then((chatData) => {
@@ -132,47 +129,51 @@ export const addUserToChat = (
       [`user-chats/${uid}/${chatId}/lastMessageCreatedAt`]: toUnixTimestamp(chatData.lastMessageCreatedAt),
     }
 
-    firebaseDB.update(entireUpdate)
+    update(firebaseDB, entireUpdate)
   })
 }
 
 export const checkForChatExistence = (
-  firebaseDB: Object,
+  firebaseDB: DatabaseReference,
   theUserId: string,
   uid: string,
   eventId: string,
-): Object => new Promise((resolve) => {
-  firebaseDB.child('chat-metadata')
-    .orderByChild(`users/${theUserId}`)
-    .startAt(true)
-    .on('value', (snap) => {
-      const chats = R.toPairs(snap.val())
+) => new Promise((resolve) => {
+  const childRef = child(firebaseDB, 'chat-metadata')
+  const orderByChildRef = orderByChild(`users/${theUserId}`)
+  const startAtRef = startAt(true)
+  const sortedRef = query(childRef, orderByChildRef, startAtRef)
 
-      const filtredChats = chats.filter((chat) => {
-        const chatMetas = chat[1]
-        const chatParticipants = R.keys(chatMetas.users)
-        const ind = chatParticipants.indexOf(uid)
+  onValue(sortedRef, (snap) => {
+    const chats = R.toPairs(snap.val())
 
-        return ind !== -1 && // chat exists
-            chatParticipants.length === 2 && // chat is private
-            eventId === chatMetas.eventId // chat is in the event scope
-      })
+    const filtredChats = chats.filter((chat) => {
+      const chatMetas = chat[1]
+      const chatParticipants = R.keys(chatMetas.users)
+      const ind = chatParticipants.indexOf(uid)
 
-      firebaseDB.child('chat-metadata').off()
-      resolve(filtredChats)
+      return ind !== -1 && // chat exists
+          chatParticipants.length === 2 && // chat is private
+          eventId === chatMetas.eventId // chat is in the event scope
     })
+
+    off(child(firebaseDB, 'chat-metadata'))
+    resolve(filtredChats)
+  })
 })
 
 export const getGroupChatsByEvent = (
-  firebaseDB: Object,
+  firebaseDB: DatabaseReference,
   eventId: string,
 ): Promise<Object> => new Promise((resolve) => {
-  firebaseDB.child('chat-metadata')
-    .orderByChild('eventId')
-    .equalTo(eventId)
-    .on('value', (snap) => {
-      const chats = snap.val()
-      firebaseDB.child('chat-metadata').off()
-      resolve(chats)
-    })
+  const childRef = child(firebaseDB, 'chat-metadata')
+  const orderByChildRef = orderByChild('eventId')
+  const equalToRef = equalTo(eventId)
+  const queryRef = query(childRef, orderByChildRef, equalToRef)
+
+  onValue(queryRef, (snap) => {
+    const chats = snap.val()
+    off(child(firebaseDB, 'chat-metadata'))
+    resolve(chats)
+  })
 })

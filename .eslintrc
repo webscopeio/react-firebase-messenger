@@ -1,14 +1,19 @@
 {
-  "parser": "babel-eslint",
+  // "parser": "babel-eslint",
   "extends": [
-    "@webscopeio"
+    "@webscopeio",
+    "eslint:recommended", 
+    "plugin:@typescript-eslint/recommended"
   ],
   "env": {
     "es6": true
   },
   "plugins": [
-    "react"
+    "react",
+    "@typescript-eslint"
   ],
+  "parser": "@typescript-eslint/parser",
+  "root": true,
   "parserOptions": {
     "sourceType": "module"
   },

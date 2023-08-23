@@ -5,6 +5,7 @@ import {
   addUserToChat,
   getGroupChatsByEvent,
 } from './firebase/calls'
+import type { ChatMetadata, ChatMessage, ChatUser, UserChats, UserChatsEntity, Message, CollectionObject, UnreadMessage } from './common/flow'
 
 export {
   ChatListProvider,
@@ -12,4 +13,12 @@ export {
   createEmptyChat,
   addUserToChat,
   getGroupChatsByEvent,
+  ChatMetadata, 
+  ChatMessage, 
+  ChatUser, 
+  UserChats, 
+  UserChatsEntity, 
+  Message, 
+  CollectionObject, 
+  UnreadMessage,
 }

@@ -1,26 +1,20 @@
-// @flow
-import React from 'react'
 import * as R from 'ramda'
 import {
   chatMessagesRef,
   usersRef,
 } from '../firebase/references'
-
-import {
-  checkForChatExistence,
-  toSendMessage,
-  getGroupChatsByEvent,
-} from '../firebase/calls'
-
+import { checkForChatExistence, toSendMessage, getGroupChatsByEvent } from '../firebase/calls'
 import {
   getMessagesIds,
   listnerSingleMessageTransform,
   loadMoreMessagesListTransform,
 } from '../helpers/transformations'
-import type { Message } from '../common/flow'
+import type { ChatMetadata, ChatUser, CollectionObject, Message } from '../common/flow'
+import { DatabaseReference, limitToLast, off, orderByChild, update, get, onChildAdded, query, onValue } from 'firebase/database'
+import { Component } from 'react'
 
 type Props = {
-  firebaseDBRef: Object,
+  firebaseDBRef: DatabaseReference,
   component: Object,
 }
 
@@ -46,79 +40,77 @@ const chatDefaultState = {
 const emptyFunc = () => null
 
 const ChatProviderWrapper = (
-  firebaseDB: any,
+  firebaseDB: DatabaseReference,
   ComposedComponent: Object,
   packageCount: number = MESSAGE_PACKAGE_COUNT,
 ) => {
-  class ChatProvider extends React.Component<Props, State> {
+  class ChatProvider extends Component<Props, State> {
     state = chatDefaultState
-    resetChat = (callback: Function) => this.setState(chatDefaultState, callback || emptyFunc)
+    resetChat = (callback: VoidFunction) => this.setState(chatDefaultState, callback || emptyFunc)
 
     chatListner = ({
       participants,
       webMessageTransform,
     }: {
-      participants: Object,
+      participants: CollectionObject<ChatUser>,
       webMessageTransform: boolean,
     }) => (chatId: string, newChat?: boolean) => {
       const { initialLoad } = this.state
-
+      const chatMessages = chatMessagesRef(firebaseDB, chatId)
+      const orderByCreatedAt = orderByChild('createdAt')
+      const limitToLastPackageCount = limitToLast(packageCount)
+      const queryRef = query(chatMessages, orderByCreatedAt, limitToLastPackageCount)
       // we want to fetch first N messages at once
       if (!newChat && initialLoad) {
-        chatMessagesRef(firebaseDB, chatId)
-          .orderByChild('createdAt')
-          .limitToLast(packageCount)
-          .once('value')
-          .then((messagesSnap) => {
-            /*
-            * Here we fetch first batch of the messages at once and process them for the chat
-            * component. After that we push them to state, mark initial load as done and unsubsribe
-            * from value listener as we will listen only to child_added events after that. In order
-            * to display lates send message.
-            */
-            const processedMessages = []
+        const limitToLastRef = limitToLast(packageCount)
 
-            messagesSnap.forEach((messageSnippet) => {
-              const message = listnerSingleMessageTransform(
-                messageSnippet,
-                participants
-              )(messageSnippet.val())
+        get(query(chatMessages, orderByCreatedAt, limitToLastRef)).then((messagesSnap) => {
+          /*
+          * Here we fetch first batch of the messages at once and process them for the chat
+          * component. After that we push them to state, mark initial load as done and unsubsribe
+          * from value listener as we will listen only to child_added events after that. In order
+          * to display lates send message.
+          */
+          const processedMessages: Message[] = []
 
-              processedMessages.push(message)
-            })
+          messagesSnap.forEach((messageSnippet) => {
+            const message = listnerSingleMessageTransform(
+              messageSnippet.key,
+              participants
+            )(messageSnippet.val())
 
-            this.setState({
-              messages: webMessageTransform ? processedMessages : processedMessages.reverse(),
-              messagesCount: processedMessages.length - this.state.messagesCount,
-              initialLoad: false,
-            })
+            processedMessages.push(message)
           })
+
+          this.setState({
+            messages: webMessageTransform ? processedMessages : processedMessages.reverse(),
+            messagesCount: processedMessages.length - this.state.messagesCount,
+            initialLoad: false,
+          })
+        })
       } else {
-        chatMessagesRef(firebaseDB, chatId)
-          .orderByChild('createdAt')
-          .limitToLast(packageCount)
-          .on('child_added', (messageSnippet) => {
-            const message = listnerSingleMessageTransform(messageSnippet, participants)(
-              messageSnippet.val()
-            )
+        onChildAdded(queryRef, (messageSnippet) => {
+          const message = listnerSingleMessageTransform(messageSnippet.key, participants)(
+            messageSnippet.val()
+          )
 
-            // We have to check for duplicates since we get already fetched node as well after
-            // initial load
-            /* eslint-disable no-underscore-dangle */
-            if (this.state.messages.some(m => m._id === message._id)) {
-              return
-            }
+          // We have to check for duplicates since we get already fetched node as well after
+          // initial load
+          /* eslint-disable no-underscore-dangle */
+          if (this.state.messages.some(m => m._id === message._id)) {
+            return
+          }
 
-            const updatedMesseges = webMessageTransform
-              ? R.append(message, this.state.messages)
-              : R.prepend(message, this.state.messages)
+          const updatedMesseges = webMessageTransform
+            ? R.append(message, this.state.messages)
+            : R.prepend(message, this.state.messages)
 
-            this.setState({
-              messages: updatedMesseges,
-              messagesCount: this.state.messagesCount + 1,
-              initialLoad: false,
-            })
+          this.setState({
+            messages: updatedMesseges,
+            messagesCount: this.state.messagesCount + 1,
+            initialLoad: false,
           })
+        })
       }
     }
 
@@ -133,9 +125,9 @@ const ChatProviderWrapper = (
       uid: string,
       recipientsIds: Array<string>,
     }) => (messages: Array<Message>) => {
-      const newChatMetaUpdate = {
-        lastMessageText: R.last(messages).text,
-        lastMessageCreatedAt: R.last(messages).createdAt,
+      const newChatMetaUpdate: Omit<ChatMetadata, 'isCustom' | 'shiftId'> = {
+        lastMessageText: R.last(messages)?.text || '',
+        lastMessageCreatedAt: R.last(messages)?.createdAt || new Date(),
         lastMessageAuthorId: uid,
         users: {},
         eventId,
@@ -157,12 +149,12 @@ const ChatProviderWrapper = (
         recipientsIds,
         meta: newChatMetaUpdate,
         createNewChat: true,
+        // NOT EVEN USED IN `toSendMessage`
         // now all of them are private by default
-        createPrivateChat: true,
+        // createPrivateChat: true,
       })
 
       this.setState({
-        /* eslint-disable react/no-unused-state */
         tempChatIdStore: newChatId,
       })
     }
@@ -178,7 +170,7 @@ const ChatProviderWrapper = (
       uid: string,
       eventId: string,
       recipientsIds: Array<string>,
-      messages: Array<Object>,
+      messages: Array<Message>,
     }) => {
       toSendMessage({
         firebaseDB,
@@ -188,16 +180,16 @@ const ChatProviderWrapper = (
         eventId,
         recipientsIds,
         meta: {
-          lastMessageText: R.last(messages).text,
-          lastMessageCreatedAt: R.last(messages).createdAt || new Date(),
+          lastMessageText: R.last<Message>(messages)?.text ?? '',
+          lastMessageCreatedAt: R.last<Message>(messages)?.createdAt || new Date(),
           lastMessageAuthorId: uid,
         },
       })
     }
 
     unsubscribeChatMessages = (chatId: string) =>
-      chatMessagesRef(firebaseDB, chatId)
-        .off()
+      off(chatMessagesRef(firebaseDB, chatId))
+
 
     loadMoreMessages = ({
       chatId,
@@ -206,8 +198,8 @@ const ChatProviderWrapper = (
       webMessageTransform,
     }: {
       chatId: string,
-      participants: Object,
-      callBack: Function,
+      participants: CollectionObject<ChatUser>,
+      callBack: VoidFunction,
       webMessageTransform: Function,
     }) => {
       const { messagesCount } = this.state
@@ -221,33 +213,33 @@ const ChatProviderWrapper = (
       // fetch last 5/10/15/20/...
 
       this.setState({ isLoadingEarlier: true }, () => {
-        chatMessagesRef(firebaseDB, chatId)
-          .orderByChild('createdAt')
-          .limitToLast(updatedMsgsCount)
-          .once('value') // TODO via on and unsubscription
-          .then((chatMsgs) => {
-            const messagesFromDB = chatMsgs.val()
+        const chatMessages = chatMessagesRef(firebaseDB, chatId)
+        const orderByCreatedAt = orderByChild('createdAt')
+        const limitToLastPackageCount = limitToLast(updatedMsgsCount)
+        const queryRef = query(chatMessages, orderByCreatedAt, limitToLastPackageCount)
 
-            if (R.values(messagesFromDB).length > this.state.messages.length) {
-              // add to message's id to other message's object
-              chatMsgs.forEach((item) => {
-                /* eslint-disable no-underscore-dangle */
-                messagesFromDB[item.key]._id = item.key
-              })
+        get(queryRef).then((chatMsgs) => {
+          const messagesFromDB = chatMsgs.val()
+          if (R.values(messagesFromDB).length > this.state.messages.length) {
+            // add to message's id to other message's object
+            chatMsgs.forEach((item) => {
+              /* eslint-disable no-underscore-dangle */
+              messagesFromDB[item.key]._id = item.key
+            })
 
-              const loadedMessages = loadMoreMessagesListTransform(participants)(messagesFromDB)
-              const hasMoreToLoad = loadedMessages.length === updatedMsgsCount
+            const loadedMessages = loadMoreMessagesListTransform(participants)(messagesFromDB)
+            const hasMoreToLoad = loadedMessages.length === updatedMsgsCount
 
-              this.setState({
-                hasMoreToLoad,
-                isLoadingEarlier: false,
-                messages: webMessageTransform
-                  ? loadedMessages
-                  : R.reverse(loadedMessages),
-                messagesCount: updatedMsgsCount,
-              }, callBack || emptyFunc)
-            }
-          })
+            this.setState({
+              hasMoreToLoad,
+              isLoadingEarlier: false,
+              messages: webMessageTransform
+                ? loadedMessages
+                : R.reverse(loadedMessages),
+              messagesCount: updatedMsgsCount,
+            }, callBack || emptyFunc)
+          }
+        })
       })
     }
 
@@ -256,7 +248,7 @@ const ChatProviderWrapper = (
       prevMessages,
     }: {
       uid: string,
-      prevMessages: any,
+      prevMessages: Message[],
     }) => {
       const {
         messages,
@@ -270,9 +262,9 @@ const ChatProviderWrapper = (
         const unreadMessagesToDeleteUpdate = diff.reduce((result, messageId) => {
           const newResult = R.assoc(`unread-messages/${uid}/${messageId}`, null, result || {})
           return newResult
-        }, 0)
+        }, {})
 
-        firebaseDB.update(unreadMessagesToDeleteUpdate)
+        update(firebaseDB, unreadMessagesToDeleteUpdate)
       }
     }
 
@@ -298,15 +290,17 @@ const ChatProviderWrapper = (
       const allChatsParticipants = {}
       await Promise.all(
         R.keys(participants).map(participantId =>
-          new Promise(resolve => usersRef(firebaseDB, participantId)
-            .once('value', (userSnapshot) => {
+          new Promise(resolve => {
+            const user = usersRef(firebaseDB, participantId)
+            return onValue(user, (userSnapshot) => {
               const userInfo = userSnapshot.val()
               const userData = { ...userInfo, uid: participantId }
 
               allChatsParticipants[participantId] = userData
 
               resolve()
-            }))
+            })
+          })
         )
       )
 

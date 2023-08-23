@@ -8,9 +8,10 @@
   "main": "dist/index.js",
   "module": "dist/index.es.js",
   "jsnext:main": "dist/index.es.js",
+  "type": "module",
   "engines": {
-    "node": ">=8",
-    "npm": ">=5"
+    "node": ">=18",
+    "npm": ">=9"
   },
   "scripts": {
     "test": "cross-env CI=1 react-scripts test --env=jsdom",
@@ -20,11 +21,12 @@
     "prepare": "yarn run build",
     "predeploy": "cd example && yarn install && yarn run build",
     "deploy": "gh-pages -d example/build",
-    "eslint": "eslint '**/*.js'"
+    "eslint": "eslint '**/*.{js,ts,tsx}'"
   },
   "dependencies": {
+    "firebase": "10.1.0",
     "moment": "2.22.2",
-    "ramda": "0.25.0"
+    "ramda": "0.29.0"
   },
   "peerDependencies": {
     "prop-types": "^15.5.4",
@@ -32,28 +34,31 @@
     "react-dom": "^15.0.0 || ^16.0.0"
   },
   "devDependencies": {
-    "@webscopeio/eslint-config": "1.0.3",
     "@babel/runtime": "7.5.5",
+    "@rollup/plugin-babel": "^6.0.3",
+    "@types/ramda": "^0.29.3",
+    "@types/react": "^18.2.21",
+    "@types/react-dom": "^18.2.7",
+    "@typescript-eslint/eslint-plugin": "^6.4.1",
+    "@typescript-eslint/parser": "^6.4.1",
+    "@webscopeio/eslint-config": "1.0.3",
     "babel-cli": "6.26.0",
     "babel-core": "^6.26.3",
     "babel-eslint": "^8.2.5",
     "babel-plugin-external-helpers": "^6.22.0",
     "babel-preset-env": "^1.7.0",
-    "babel-preset-flow": "6.23.0",
     "babel-preset-react": "^6.24.1",
     "babel-preset-stage-0": "^6.24.1",
     "cross-env": "^5.1.4",
     "eslint": "5.0.1",
     "eslint-config-standard": "^11.0.0",
     "eslint-config-standard-react": "^6.0.0",
-    "eslint-plugin-flowtype": "2.50.3",
     "eslint-plugin-import": "^2.13.0",
     "eslint-plugin-jsx-a11y": "6.1.1",
     "eslint-plugin-node": "^7.0.1",
     "eslint-plugin-promise": "^4.0.0",
     "eslint-plugin-react": "^7.10.0",
     "eslint-plugin-standard": "^3.1.0",
-    "flow-bin": "0.82.0",
     "gh-pages": "^1.2.0",
     "husky": "1.1.0",
     "lint-staged": "7.3.0",
@@ -66,7 +71,8 @@
     "rollup-plugin-node-resolve": "^3.3.0",
     "rollup-plugin-peer-deps-external": "^2.2.0",
     "rollup-plugin-postcss": "^1.6.2",
-    "rollup-plugin-url": "^1.4.0"
+    "rollup-plugin-url": "^1.4.0",
+    "typescript": "^5.1.6"
   },
   "files": [
     "dist"
@@ -77,7 +83,7 @@
     }
   },
   "lint-staged": {
-    "*.{js,jsx}": [
+    "*.{js,jsx,ts,tsx}": [
       "eslint"
     ]
   }
