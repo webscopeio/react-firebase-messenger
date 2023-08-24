@@ -4,6 +4,7 @@ import {
   createEmptyChat,
   addUserToChat,
   getGroupChatsByEvent,
+  getChatById,
 } from "./firebase/calls";
 import type {
   ChatMetadata,
@@ -22,6 +23,7 @@ export {
   createEmptyChat,
   addUserToChat,
   getGroupChatsByEvent,
+  getChatById,
   ChatMetadata,
   ChatMessage,
   ChatUser,
