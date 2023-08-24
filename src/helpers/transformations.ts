@@ -1,5 +1,4 @@
 import * as R from "ramda";
-import { toUnixTimestamp, unixToJSDate } from "./time-convertors";
 import type {
   ChatMessage,
   ChatUser,
@@ -7,6 +6,7 @@ import type {
   Message,
   UserChatsEntity,
 } from "../common/database";
+import { toUnixTimestamp, unixToJSDate } from "./time-convertors";
 
 // js date to utc ms timestamp
 // remove _id from message object

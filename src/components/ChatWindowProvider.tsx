@@ -1,5 +1,16 @@
 import * as React from "react";
 import * as R from "ramda";
+import {
+  DatabaseReference,
+  limitToLast,
+  off,
+  orderByChild,
+  update,
+  get,
+  onChildAdded,
+  query,
+  onValue,
+} from "firebase/database";
 import { chatMessagesRef, usersRef } from "../firebase/references";
 import {
   checkForChatExistence,
@@ -17,17 +28,6 @@ import type {
   CollectionObject,
   Message,
 } from "../common/database";
-import {
-  DatabaseReference,
-  limitToLast,
-  off,
-  orderByChild,
-  update,
-  get,
-  onChildAdded,
-  query,
-  onValue,
-} from "firebase/database";
 
 type Props = {
   firebaseDBRef: DatabaseReference;
