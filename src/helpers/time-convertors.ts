@@ -1,5 +1,5 @@
-import moment from "moment";
+import dayjs from "dayjs";
 
-export const toUnixTimestamp = (item: Date): string => moment(item).format("x");
+export const toUnixTimestamp = (item: Date): string => dayjs(item).format("x");
 
-export const unixToJSDate = (time: string): Date => moment(time, "x").toDate();
+export const unixToJSDate = (time: string): Date => dayjs(time, "x").toDate();

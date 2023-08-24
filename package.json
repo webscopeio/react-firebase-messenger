@@ -24,8 +24,8 @@
     "eslint": "eslint '**/*.{js,ts,tsx}'"
   },
   "dependencies": {
+    "dayjs": "^1.11.9",
     "firebase": "10.1.0",
-    "moment": "2.22.2",
     "ramda": "0.29.0"
   },
   "peerDependencies": {
