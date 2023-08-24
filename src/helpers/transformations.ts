@@ -17,8 +17,8 @@ import { toUnixTimestamp, unixToJSDate } from "./time-convertors";
 export const transformMessagesToStoreInDB = (userId: string) =>
   R.compose<
     Message[][],
-    { [_id: string]: Message },
-    { [_id: string]: ChatMessage },
+    CollectionObject<Message>,
+    CollectionObject<ChatMessage>,
     Array<[string, ChatMessage]>
   >(
     R.toPairs,

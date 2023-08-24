@@ -235,6 +235,7 @@ const ChatProviderWrapper = (
       chatId: string;
       participants: CollectionObject<ChatUser>;
       callBack: VoidFunction;
+      // TODO not sure what type is this, as it is not call anywhere to be function. It's used in condition.
       webMessageTransform: Function;
     }) => {
       const { messagesCount } = this.state;
@@ -336,13 +337,14 @@ const ChatProviderWrapper = (
       return checkForChatExistence(firebaseDB, theUserId, uid, eventId);
     };
 
-    getChatParticipantsDetails = async (participants: Object) => {
-      const allChatsParticipants = {};
+    getChatParticipantsDetails = async (participants: CollectionObject<true>) => {
+      const allChatsParticipants: CollectionObject<object> = {};
       await Promise.all(
         R.keys(participants).map(
+          // participantId is definitely string
           (participantId) =>
             new Promise((resolve) => {
-              const user = usersRef(firebaseDB, participantId);
+              const user = usersRef(firebaseDB, participantId as string);
               return onValue(
                 user,
                 (userSnapshot) => {
