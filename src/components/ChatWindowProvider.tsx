@@ -6,7 +6,6 @@ import {
   off,
   orderByChild,
   update,
-  get,
   onChildAdded,
   query,
   onValue,
@@ -85,9 +84,8 @@ const ChatProviderWrapper = (
         );
         // we want to fetch first N messages at once
         if (!newChat && initialLoad) {
-          const limitToLastRef = limitToLast(packageCount);
-
-          get(query(chatMessages, orderByCreatedAt, limitToLastRef)).then(
+          onValue(
+            queryRef,
             (messagesSnap) => {
               /*
                * Here we fetch first batch of the messages at once and process them for the chat
@@ -114,6 +112,10 @@ const ChatProviderWrapper = (
                   processedMessages.length - this.state.messagesCount,
                 initialLoad: false,
               });
+            },
+            // ensure to read data only once
+            {
+              onlyOnce: true,
             }
           );
         } else {
@@ -255,32 +257,39 @@ const ChatProviderWrapper = (
           limitToLastPackageCount
         );
 
-        get(queryRef).then((chatMsgs) => {
-          const messagesFromDB = chatMsgs.val();
-          if (R.values(messagesFromDB).length > this.state.messages.length) {
-            // add to message's id to other message's object
-            chatMsgs.forEach((item) => {
-              /* eslint-disable no-underscore-dangle */
-              messagesFromDB[item.key]._id = item.key;
-            });
+        onValue(
+          queryRef,
+          (chatMsgs) => {
+            const messagesFromDB = chatMsgs.val();
+            if (R.values(messagesFromDB).length > this.state.messages.length) {
+              // add to message's id to other message's object
+              chatMsgs.forEach((item) => {
+                /* eslint-disable no-underscore-dangle */
+                messagesFromDB[item.key]._id = item.key;
+              });
 
-            const loadedMessages =
-              loadMoreMessagesListTransform(participants)(messagesFromDB);
-            const hasMoreToLoad = loadedMessages.length === updatedMsgsCount;
+              const loadedMessages =
+                loadMoreMessagesListTransform(participants)(messagesFromDB);
+              const hasMoreToLoad = loadedMessages.length === updatedMsgsCount;
 
-            this.setState(
-              {
-                hasMoreToLoad,
-                isLoadingEarlier: false,
-                messages: webMessageTransform
-                  ? loadedMessages
-                  : R.reverse(loadedMessages),
-                messagesCount: updatedMsgsCount,
-              },
-              callBack || emptyFunc
-            );
+              this.setState(
+                {
+                  hasMoreToLoad,
+                  isLoadingEarlier: false,
+                  messages: webMessageTransform
+                    ? loadedMessages
+                    : R.reverse(loadedMessages),
+                  messagesCount: updatedMsgsCount,
+                },
+                callBack || emptyFunc
+              );
+            }
+          },
+          // ensure to read data only once
+          {
+            onlyOnce: true,
           }
-        });
+        );
       });
     };
 
@@ -334,14 +343,21 @@ const ChatProviderWrapper = (
           (participantId) =>
             new Promise((resolve) => {
               const user = usersRef(firebaseDB, participantId);
-              return onValue(user, (userSnapshot) => {
-                const userInfo = userSnapshot.val();
-                const userData = { ...userInfo, uid: participantId };
+              return onValue(
+                user,
+                (userSnapshot) => {
+                  const userInfo = userSnapshot.val();
+                  const userData = { ...userInfo, uid: participantId };
 
-                allChatsParticipants[participantId] = userData;
-                // resolve participantId just to fulfill the promise
-                resolve(participantId);
-              });
+                  allChatsParticipants[participantId] = userData;
+                  // resolve participantId just to fulfill the promise
+                  resolve(participantId);
+                },
+                // ensure to read data only once
+                {
+                  onlyOnce: true,
+                }
+              );
             })
         )
       );
