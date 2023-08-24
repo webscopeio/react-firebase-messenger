@@ -227,3 +227,15 @@ export const getGroupChatsByEvent = (
       resolve(chats);
     });
   });
+
+  export const getChatById = (
+    firebaseDB: DatabaseReference,
+    chatId: string,
+  ): Promise<ChatMetadata> => new Promise((resolve) => {
+    const childRef = child(firebaseDB, `chat-metadata/${chatId}`)
+    onValue(childRef, (snap) => {
+      const chat = snap.val()
+      off(child(firebaseDB, 'chat-metadata'))
+      resolve(chat)
+    })
+  })
