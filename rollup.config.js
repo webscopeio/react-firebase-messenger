@@ -5,7 +5,12 @@ import postcss from 'rollup-plugin-postcss'
 import resolve from 'rollup-plugin-node-resolve'
 import url from 'rollup-plugin-url'
 
+
 import pkg from './package.json' 
+
+const extensions = [
+  '.js', '.jsx', '.ts', '.tsx',
+];
 
 export default {
   input: 'src/index.ts',
@@ -27,11 +32,14 @@ export default {
       modules: true,
     }),
     url(),
-    babel({
-      exclude: 'node_modules/**',
-      plugins: ['external-helpers'],
+    resolve({
+      extensions,
     }),
-    resolve(),
+    babel({
+      extensions,
+      exclude: 'node_modules/**',
+      plugins: [],
+    }),
     commonjs(),
   ],
 }
