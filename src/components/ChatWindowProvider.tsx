@@ -16,7 +16,7 @@ import type {
   ChatUser,
   CollectionObject,
   Message,
-} from "../common/flow";
+} from "../common/database";
 import {
   DatabaseReference,
   limitToLast,

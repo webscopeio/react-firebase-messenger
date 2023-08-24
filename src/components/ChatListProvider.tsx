@@ -17,7 +17,7 @@ import type {
   ChatMetadata,
   CollectionObject,
   UserChatsEntity,
-} from "../common/flow";
+} from "../common/database";
 
 type State = {
   userChats: { [chatId: string]: UserChatsEntity };

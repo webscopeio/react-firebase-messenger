@@ -6,7 +6,7 @@ import type {
   CollectionObject,
   Message,
   UserChatsEntity,
-} from "../common/flow";
+} from "../common/database";
 
 // js date to utc ms timestamp
 // remove _id from message object

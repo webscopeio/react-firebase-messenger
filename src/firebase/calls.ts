@@ -18,7 +18,7 @@ import type {
   CollectionObject,
   Message,
   UnreadMessage,
-} from "../common/flow";
+} from "../common/database";
 
 // To send and store message on fdb
 export const toSendMessage = ({

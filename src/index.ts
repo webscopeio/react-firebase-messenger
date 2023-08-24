@@ -14,7 +14,7 @@ import type {
   Message,
   CollectionObject,
   UnreadMessage,
-} from "./common/flow";
+} from "./common/database";
 
 export {
   ChatListProvider,
