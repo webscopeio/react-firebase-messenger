@@ -1,4 +1,4 @@
-import { Component } from 'react'
+import * as React from 'react'
 import * as R from 'ramda'
 import { onValue, type DatabaseReference, off, orderByChild, query } from 'firebase/database'
 import {
@@ -7,7 +7,7 @@ import {
   userChatsAllRef,
 } from '../firebase/references'
 import { toFlatList } from '../helpers/transformations'
-import type { CollectionObject, UserChatsEntity } from '../common/flow'
+import type { ChatMetadata, CollectionObject, UserChatsEntity } from '../common/flow'
 
 type State = {
   userChats: { [chatId: string]: UserChatsEntity },
@@ -18,10 +18,10 @@ type State = {
 
 type Props = {
   firebaseDBRef: DatabaseReference,
-  component: Object,
+  component: React.ComponentType<any>,
 }
 
-class ChatListProvider extends Component<Props, State> {
+class ChatListProvider extends React.Component<Props, State> {
   state = {
     chatsData: [],
     error: false,
@@ -65,8 +65,8 @@ class ChatListProvider extends Component<Props, State> {
           const chatMetaRef = chatMetadataRef(firebaseDBRef, chatId)
           const chatMetaListener = onValue(chatMetaRef, (chatMetaSnapshot) => {
             // TODO resolve any
-            let chatMetas = R.compose<any, any, any>(
-              R.evolve({
+            let chatMetas = R.compose<Omit<UserChatsEntity & { users: ChatMetadata['users'] }, 'participants'>[], UserChatsEntity & { users: ChatMetadata['users'] }, UserChatsEntity & { users: ChatMetadata['users']}>(
+              R.evolve<any>({
                 users: R.dissoc(uid), // dissoc THE user
               }),
               R.assoc('participants', []),
@@ -96,8 +96,8 @@ class ChatListProvider extends Component<Props, State> {
                       )(chatMetas)
 
                       allChatsParticipants[participantId] = true
-                      // TODO what to resolve?
-                      resolve()
+                      // resolve participantId just to fulfill the promise
+                      resolve(participantId)
                     })
                   }),
                 ),
@@ -111,13 +111,14 @@ class ChatListProvider extends Component<Props, State> {
           return chatMetaListener
         }
         )))
+        // data type inherited from line 106 : Array<CollectionObject<UserChatsEntity>>
           .then((data) => {
             Object.keys(allChatsParticipants)
               .map(participantId => (
                 off(usersRef(firebaseDBRef, participantId))
               ))
             // TODO what type is data?
-            const chats = data.reduce<CollectionObject<UserChatsEntity>>((acc, cur) => ({ ...acc, ...cur }), {})
+            const chats = (data as Array<CollectionObject<UserChatsEntity>>).reduce<CollectionObject<UserChatsEntity>>((acc, cur) => ({ ...acc, ...cur }), {})
             this.setState({
               chatsData: toFlatList(chats),
               loading: false,

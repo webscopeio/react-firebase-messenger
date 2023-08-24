@@ -1,3 +1,4 @@
+import * as React from 'react'
 import * as R from 'ramda'
 import {
   chatMessagesRef,
@@ -11,7 +12,6 @@ import {
 } from '../helpers/transformations'
 import type { ChatMetadata, ChatUser, CollectionObject, Message } from '../common/flow'
 import { DatabaseReference, limitToLast, off, orderByChild, update, get, onChildAdded, query, onValue } from 'firebase/database'
-import { Component } from 'react'
 
 type Props = {
   firebaseDBRef: DatabaseReference,
@@ -41,10 +41,10 @@ const emptyFunc = () => null
 
 const ChatProviderWrapper = (
   firebaseDB: DatabaseReference,
-  ComposedComponent: Object,
+  ComposedComponent: React.ComponentType<any>,
   packageCount: number = MESSAGE_PACKAGE_COUNT,
 ) => {
-  class ChatProvider extends Component<Props, State> {
+  class ChatProvider extends React.Component<Props, State> {
     state = chatDefaultState
     resetChat = (callback: VoidFunction) => this.setState(chatDefaultState, callback || emptyFunc)
 
@@ -97,7 +97,7 @@ const ChatProviderWrapper = (
           // We have to check for duplicates since we get already fetched node as well after
           // initial load
           /* eslint-disable no-underscore-dangle */
-          if (this.state.messages.some(m => m._id === message._id)) {
+          if (this.state.messages.some((m: Message) => m._id === message._id)) {
             return
           }
 
@@ -297,8 +297,8 @@ const ChatProviderWrapper = (
               const userData = { ...userInfo, uid: participantId }
 
               allChatsParticipants[participantId] = userData
-
-              resolve()
+              // resolve participantId just to fulfill the promise
+              resolve(participantId)
             })
           })
         )
