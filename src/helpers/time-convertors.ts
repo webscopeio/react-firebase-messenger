@@ -1,5 +1,12 @@
 import dayjs from "dayjs";
 
-export const toUnixTimestamp = (item: Date): string => dayjs(item).unix().toString();
+/**
+ * Convert a Date object to a Unix timestamp milliseconds
+ */
+export const toUnixTimestamp = (item: Date): string =>
+  dayjs(item).valueOf().toString();
 
-export const unixToJSDate = (time: string): Date => dayjs.unix(+time).toDate();
+/**
+ * Convert a Unix timestamp milliseconds to a Date object
+ */
+export const unixToJSDate = (time: string): Date => dayjs(+time).toDate();
