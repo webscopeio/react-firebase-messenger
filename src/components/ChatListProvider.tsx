@@ -54,12 +54,8 @@ class ChatListProvider extends React.Component<Props, State> {
       this.chatListenerRef = userChatsAllRef(firebaseDBRef, uid);
       // .limitToLast(5) // TODO pagination
 
-      const orderByChildRef = orderByChild("lastMessageCreatedAt");
-      const queryRef = query(this.chatListenerRef,
-        //  orderByChildRef
-         );
       onValue(
-        queryRef,
+        query(this.chatListenerRef, orderByChild("lastMessageCreatedAt")),
         (chatsSnapshot) => {
           // TODO resolve any
           const chatsMetaValues: CollectionObject<any> = chatsSnapshot.val();

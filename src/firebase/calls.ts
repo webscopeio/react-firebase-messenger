@@ -31,7 +31,7 @@ export const toSendMessage = ({
   meta,
   createNewChat,
 }: {
-  firebaseDB: DatabaseReference;
+  firebaseDB: any;
   chatId: string;
   userId: string;
   messages: Array<Message>;
@@ -120,7 +120,7 @@ export const toSendMessage = ({
     ...chatMetaUpdate,
   };
   console.warn("toSendMessage entireUpdate", entireUpdate);
-  update(firebaseDB, entireUpdate);
+  firebaseDB.update(entireUpdate);
 };
 
 export const createEmptyChat = (
@@ -190,31 +190,31 @@ export const checkForChatExistence = (
   new Promise((resolve) => {
     console.warn("checkForChatExistence", theUserId, uid, eventId);
     const childRef = child(firebaseDB, "chat-metadata");
-    const orderByChildRef = orderByChild(`users/${theUserId}`);
-    const startAtRef = startAt(true);
-    const sortedRef = query(childRef, 
-      // orderByChildRef, 
-      startAtRef
-      );
+    onValue(
+      query(
+        childRef,
+        orderByChild(`users/${theUserId}`),
+        startAt(true)
+      ),
+      (snap) => {
+        const chats = R.toPairs(snap.val());
 
-    onValue(sortedRef, (snap) => {
-      const chats = R.toPairs(snap.val());
+        const filtredChats = chats.filter((chat) => {
+          const chatMetas = chat[1];
+          const chatParticipants = R.keys(chatMetas.users);
+          const ind = chatParticipants.indexOf(uid);
 
-      const filtredChats = chats.filter((chat) => {
-        const chatMetas = chat[1];
-        const chatParticipants = R.keys(chatMetas.users);
-        const ind = chatParticipants.indexOf(uid);
+          return (
+            ind !== -1 && // chat exists
+            chatParticipants.length === 2 && // chat is private
+            eventId === chatMetas.eventId
+          ); // chat is in the event scope
+        });
 
-        return (
-          ind !== -1 && // chat exists
-          chatParticipants.length === 2 && // chat is private
-          eventId === chatMetas.eventId
-        ); // chat is in the event scope
-      });
-
-      off(child(firebaseDB, "chat-metadata"));
-      resolve(filtredChats);
-    }, { onlyOnce: true });
+        off(childRef);
+        resolve(filtredChats);
+      }
+    );
   });
 
 export const getGroupChatsByEvent = (
@@ -224,18 +224,18 @@ export const getGroupChatsByEvent = (
   new Promise((resolve) => {
     console.warn("getGroupChatsByEvent", eventId);
     const childRef = child(firebaseDB, "chat-metadata");
-    const orderByChildRef = orderByChild("eventId");
-    const equalToRef = equalTo(eventId);
-    const queryRef = query(childRef, 
-      // orderByChildRef, 
-      equalToRef
-      );
-
-    onValue(queryRef, (snap) => {
-      const chats = snap.val();
-      off(childRef);
-      resolve(chats);
-    });
+    onValue(
+      query(
+        childRef,
+        orderByChild("eventId"),
+        equalTo(eventId)
+      ),
+      (snap) => {
+        const chats = snap.val();
+        off(childRef);
+        resolve(chats);
+      }
+    );
   });
 
 export const getChatById = (
