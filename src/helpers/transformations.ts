@@ -1,5 +1,6 @@
 import * as R from "ramda";
-import type {
+
+import {
   ChatMessage,
   ChatUser,
   CollectionObject,
@@ -37,10 +38,9 @@ export const transformMessagesToStoreInDB = (userId: string) =>
   );
 
 // Create user object in GiftedChat requires shape
-// Add `user` (Message.user) object to message
 const createUserObject =
   (participants: CollectionObject<ChatUser>) =>
-  (messageObject: ChatMessage): ChatMessage & { user: Message["user"] } => {
+  (messageObject: ChatMessage) => {
     const participant = participants[messageObject.userId];
 
     return R.assoc(
@@ -59,52 +59,53 @@ const createUserObject =
   };
 
 // handling list of messages which are got from firebase
-export const loadMoreMessagesListTransform =
-  (participants: CollectionObject<ChatUser>) =>
-  (messages: CollectionObject<ChatMessage>) =>
-    R.compose<
-      CollectionObject<ChatMessage>[],
-      ChatMessage[],
-      Message[],
-      Message[]
-    >(
-      R.sortBy(R.prop("createdAt")),
-      R.map(
-        // TODO: get rid of any
-        R.compose<any, any, any, any>(
-          R.dissoc("_id"),
-          R.evolve({
-            createdAt: unixToJSDate,
-          }),
-          createUserObject(participants)
-        )
-      ),
-      R.values
-    )(messages);
+export const loadMoreMessagesListTransform = (
+  participants: CollectionObject<ChatUser>
+) =>
+  R.compose<
+    CollectionObject<ChatMessage>[],
+    ChatMessage[],
+    Message[],
+    Message[]
+  >(
+    // R.reverse,
+    R.sortBy(R.prop("createdAt")),
+    R.map(
+      R.compose<any, any, any, any>(
+        R.dissoc("userId"),
+        R.evolve({
+          createdAt: unixToJSDate,
+        }),
+        createUserObject(participants)
+      )
+    ),
+    R.values
+  );
 
 // handling one single message which is got from firebase
-export const listnerSingleMessageTransform =
-  (messageKey: string | null, participants: CollectionObject<ChatUser>) =>
-  (msg: ChatMessage): Message =>
-    R.compose<
-      ChatMessage[],
-      ChatMessage & { user: Message["user"] },
-      ChatMessage & Message,
-      Omit<ChatMessage & Message, "userId">,
-      Message
-    >(
-      R.dissoc("userId"),
-      R.evolve<any>({
-        createdAt: unixToJSDate,
-      }),
-      R.assoc("_id", messageKey),
-      createUserObject(participants)
-    )(msg);
+export const listnerSingleMessageTransform = (
+  messageSnippetKey: string | null,
+  participants: CollectionObject<ChatUser>
+) =>
+  R.compose<
+    ChatMessage[],
+    ChatMessage & { user: Message["user"] },
+    ChatMessage & Message,
+    Omit<ChatMessage & Message, "userId">,
+    Message
+  >(
+    R.dissoc("userId"),
+    R.evolve<any>({
+      createdAt: unixToJSDate,
+    }),
+    R.assoc("_id", messageSnippetKey),
+    createUserObject(participants)
+  );
 
 // Transform data into FlatList requires shape
 export const toFlatList = (
   userChats: CollectionObject<Omit<UserChatsEntity, "chatId">>
-): Array<UserChatsEntity> =>
+) =>
   R.compose<
     CollectionObject<Omit<UserChatsEntity, "chatId">>[],
     any,
@@ -112,16 +113,11 @@ export const toFlatList = (
     Array<UserChatsEntity>,
     Array<UserChatsEntity>
   >(R.reverse, R.sortBy(R.prop("lastMessageCreatedAt")), R.values, (item) => {
-    // item is CollectionObject<UserChatsEntity>
-    const chatsIds = R.keys(item); // ids of chats
-
-    chatsIds.forEach((id) => {
-      // item[id] is Omit<UserChatsEntity, 'chatId'>
-      item[id] = R.compose<Omit<UserChatsEntity, "chatId">[], UserChatsEntity>(
-        R.assoc("chatId", id)
+    const keys = R.keys(item);
+    keys.forEach(
       // @ts-ignore // TODO: fix this however it should not throw error even it does :(
-      )(item[id]);
-    });
+      (key) => (item[key] = R.compose(R.assoc("chatId", key))(item[key]))
+    );
 
     return item;
   })(userChats);
