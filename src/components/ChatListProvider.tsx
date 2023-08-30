@@ -48,13 +48,16 @@ class ChatListProvider extends React.Component<Props, State> {
     // eventId: string,
     uid: string;
   }) => {
+    console.warn("chatListDataFetch");
     const { firebaseDBRef } = this.props;
     if (uid) {
       this.chatListenerRef = userChatsAllRef(firebaseDBRef, uid);
       // .limitToLast(5) // TODO pagination
 
       const orderByChildRef = orderByChild("lastMessageCreatedAt");
-      const queryRef = query(this.chatListenerRef, orderByChildRef);
+      const queryRef = query(this.chatListenerRef,
+        //  orderByChildRef
+         );
       onValue(
         queryRef,
         (chatsSnapshot) => {
@@ -141,6 +144,7 @@ class ChatListProvider extends React.Component<Props, State> {
           )
             // data type inherited from line 106 : Array<CollectionObject<UserChatsEntity>>
             .then((data) => {
+              console.warn("chatListProvider data", data);
               Object.keys(allChatsParticipants).map((participantId) =>
                 off(usersRef(firebaseDBRef, participantId))
               );
@@ -151,6 +155,8 @@ class ChatListProvider extends React.Component<Props, State> {
                 (acc, cur) => ({ ...acc, ...cur }),
                 {}
               );
+              console.warn("chatListProvider chats", chats, toFlatList(chats));
+              // TODO fixnut toto, je to rozjebane. Initial load je pohode, ale ked posles spravu, tak zmizne chat
               this.setState({
                 chatsData: toFlatList(chats),
                 loading: false,
@@ -175,6 +181,7 @@ class ChatListProvider extends React.Component<Props, State> {
   };
 
   unsubscribeChatsData = () => {
+    console.warn("unsubscribeChatsData");
     if (this.chatListenerRef) {
       off(this.chatListenerRef);
     }

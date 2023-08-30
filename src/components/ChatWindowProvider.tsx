@@ -73,13 +73,14 @@ const ChatProviderWrapper = (
         webMessageTransform: boolean;
       }) =>
       (chatId: string, newChat?: boolean) => {
+        console.warn("chatListner", chatId);
         const { initialLoad } = this.state;
         const chatMessages = chatMessagesRef(firebaseDB, chatId);
         const orderByCreatedAt = orderByChild("createdAt");
         const limitToLastPackageCount = limitToLast(packageCount);
         const queryRef = query(
           chatMessages,
-          orderByCreatedAt,
+          // orderByCreatedAt,
           limitToLastPackageCount
         );
         // we want to fetch first N messages at once
@@ -87,6 +88,7 @@ const ChatProviderWrapper = (
           onValue(
             queryRef,
             (messagesSnap) => {
+              console.warn("chatListner", 1, messagesSnap.val(), messagesSnap);
               /*
                * Here we fetch first batch of the messages at once and process them for the chat
                * component. After that we push them to state, mark initial load as done and unsubsribe
@@ -96,6 +98,7 @@ const ChatProviderWrapper = (
               const processedMessages: Message[] = [];
 
               messagesSnap.forEach((messageSnippet) => {
+                console.warn("chatListner", 1.1, messageSnippet.val());
                 const message = listnerSingleMessageTransform(
                   messageSnippet.key,
                   participants
@@ -112,6 +115,7 @@ const ChatProviderWrapper = (
                   processedMessages.length - this.state.messagesCount,
                 initialLoad: false,
               });
+              console.warn("chatListner", 2);
             },
             // ensure to read data only once
             {
@@ -120,6 +124,7 @@ const ChatProviderWrapper = (
           );
         } else {
           onChildAdded(queryRef, (messageSnippet) => {
+            console.warn("chatListner", 3, messageSnippet.val());
             const message = listnerSingleMessageTransform(
               messageSnippet.key,
               participants
@@ -131,9 +136,11 @@ const ChatProviderWrapper = (
             if (
               this.state.messages.some((m: Message) => m._id === message._id)
             ) {
+              console.warn("chatListner", 3.5);
               return;
             }
 
+            console.warn("chatListner", 4);
             const updatedMesseges = webMessageTransform
               ? R.append(message, this.state.messages)
               : R.prepend(message, this.state.messages);
@@ -143,6 +150,8 @@ const ChatProviderWrapper = (
               messagesCount: this.state.messagesCount + 1,
               initialLoad: false,
             });
+
+            console.warn("chatListner", 5);
           });
         }
       };
@@ -160,6 +169,7 @@ const ChatProviderWrapper = (
         recipientsIds: Array<string>;
       }) =>
       (messages: Array<Message>) => {
+        console.warn("createNewChat", newChatId);
         const newChatMetaUpdate: Omit<ChatMetadata, "isCustom" | "shiftId"> = {
           lastMessageText: R.last(messages)?.text || "",
           lastMessageCreatedAt: R.last(messages)?.createdAt || new Date(),
@@ -207,6 +217,7 @@ const ChatProviderWrapper = (
       recipientsIds: Array<string>;
       messages: Array<Message>;
     }) => {
+      console.warn("onSend", chatId);
       toSendMessage({
         firebaseDB,
         chatId,
@@ -223,8 +234,10 @@ const ChatProviderWrapper = (
       });
     };
 
-    unsubscribeChatMessages = (chatId: string) =>
-      off(chatMessagesRef(firebaseDB, chatId));
+    unsubscribeChatMessages = (chatId: string) => {
+      console.warn("unsubscribeChatMessages", chatId);
+      return off(chatMessagesRef(firebaseDB, chatId));
+    };
 
     loadMoreMessages = ({
       chatId,
@@ -238,6 +251,7 @@ const ChatProviderWrapper = (
       // TODO not sure what type is this, as it is not call anywhere to be function. It's used in condition.
       webMessageTransform: Function;
     }) => {
+      console.warn("loadMoreMessages", chatId);
       const { messagesCount } = this.state;
       const updatedMsgsCount = messagesCount + packageCount;
       // draft
@@ -254,14 +268,15 @@ const ChatProviderWrapper = (
         const limitToLastPackageCount = limitToLast(updatedMsgsCount);
         const queryRef = query(
           chatMessages,
-          orderByCreatedAt,
+          // orderByCreatedAt,
           limitToLastPackageCount
         );
 
         onValue(
           queryRef,
           (chatMsgs) => {
-            const messagesFromDB = chatMsgs.val();
+            const messagesFromDB = chatMsgs.val() as CollectionObject<any>;
+            console.warn("loadMoreMessages messagesFromDB", messagesFromDB);
             if (R.values(messagesFromDB).length > this.state.messages.length) {
               // add to message's id to other message's object
               chatMsgs.forEach((item) => {
@@ -301,6 +316,7 @@ const ChatProviderWrapper = (
       uid: string;
       prevMessages: Message[];
     }) => {
+      console.warn("markMessagesRead", uid);
       const { messages } = this.state;
       const messagesIds = getMessagesIds(messages);
       const prevMessagesIds = getMessagesIds(prevMessages);
@@ -332,21 +348,23 @@ const ChatProviderWrapper = (
       theUserId: string;
       uid: string;
       eventId: string;
-      /* eslint-disable-next-line */
     }) => {
+      console.warn("checkForChat", theUserId);
       return checkForChatExistence(firebaseDB, theUserId, uid, eventId);
     };
 
-    getChatParticipantsDetails = async (participants: CollectionObject<true>) => {
+    getChatParticipantsDetails = async (
+      participants: CollectionObject<true>
+    ) => {
+      console.warn("getChatParticipantsDetails", participants);
       const allChatsParticipants: CollectionObject<object> = {};
       await Promise.all(
         R.keys(participants).map(
           // participantId is definitely string
           (participantId) =>
-            new Promise((resolve) => {
-              const user = usersRef(firebaseDB, participantId as string);
-              return onValue(
-                user,
+            new Promise((resolve) =>
+              onValue(
+                usersRef(firebaseDB, participantId as string),
                 (userSnapshot) => {
                   const userInfo = userSnapshot.val();
                   const userData = { ...userInfo, uid: participantId };
@@ -359,16 +377,18 @@ const ChatProviderWrapper = (
                 {
                   onlyOnce: true,
                 }
-              );
-            })
+              )
+            )
         )
       );
 
       return allChatsParticipants;
     };
 
-    getGroupChatsByEvent = (eventId: string) =>
-      getGroupChatsByEvent(firebaseDB, eventId);
+    getGroupChatsByEvent = (eventId: string) => {
+      console.warn("getGroupChatsByEvent", eventId);
+      return getGroupChatsByEvent(firebaseDB, eventId);
+    };
 
     render() {
       return (
