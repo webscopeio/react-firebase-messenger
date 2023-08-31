@@ -1,6 +1,6 @@
 import * as R from "ramda";
 import {
-  DatabaseReference,
+  type DatabaseReference,
   child,
   off,
   update,
@@ -19,6 +19,7 @@ import type {
   Message,
   UnreadMessage,
 } from "../common/database";
+import { chatMetadataRef } from "./references";
 
 // To send and store message on fdb
 export const toSendMessage = ({
@@ -31,7 +32,7 @@ export const toSendMessage = ({
   meta,
   createNewChat,
 }: {
-  firebaseDB: any;
+  firebaseDB: DatabaseReference;
   chatId: string;
   userId: string;
   messages: Array<Message>;
@@ -119,8 +120,7 @@ export const toSendMessage = ({
     ...lastMessageCreatedAtUpdate,
     ...chatMetaUpdate,
   };
-  console.warn("toSendMessage entireUpdate", entireUpdate);
-  firebaseDB.update(entireUpdate);
+  update(firebaseDB, entireUpdate);
 };
 
 export const createEmptyChat = (
@@ -131,7 +131,6 @@ export const createEmptyChat = (
   recipientsIds: Array<string>,
   meta: ChatMetadata
 ) => {
-  console.warn("createEmptyChat", chatId, userId, eventId, recipientsIds, meta);
   const lastMessageTimeStamp = toUnixTimestamp(meta.lastMessageCreatedAt);
 
   const lastMessageCreatedAtUpdate = recipientsIds.reduce(
@@ -163,9 +162,8 @@ export const addUserToChat = (
   uid: string,
   chatId: string
 ) => {
-  console.warn("addUserToChat", uid, chatId);
   const upp: Promise<ChatMetadata> = new Promise((resolve) => {
-    const childRef = child(firebaseDB, `chat-metadata/${chatId}`);
+    const childRef = chatMetadataRef(firebaseDB, chatId);
     return onValue(childRef, (snap) => resolve(snap.val()), { onlyOnce: true });
   });
 
@@ -188,14 +186,9 @@ export const checkForChatExistence = (
   eventId: string
 ) =>
   new Promise((resolve) => {
-    console.warn("checkForChatExistence", theUserId, uid, eventId);
     const childRef = child(firebaseDB, "chat-metadata");
     onValue(
-      query(
-        childRef,
-        orderByChild(`users/${theUserId}`),
-        startAt(true)
-      ),
+      query(childRef, orderByChild(`users/${theUserId}`), startAt(true)),
       (snap) => {
         const chats = R.toPairs(snap.val());
 
@@ -222,20 +215,13 @@ export const getGroupChatsByEvent = (
   eventId: string
 ): Promise<Object> =>
   new Promise((resolve) => {
-    console.warn("getGroupChatsByEvent", eventId);
     const childRef = child(firebaseDB, "chat-metadata");
-    onValue(
-      query(
-        childRef,
-        orderByChild("eventId"),
-        equalTo(eventId)
-      ),
-      (snap) => {
-        const chats = snap.val();
-        off(childRef);
-        resolve(chats);
-      }
-    );
+    const queryRef = query(childRef, orderByChild("eventId"), equalTo(eventId));
+    onValue(queryRef, (snap) => {
+      const chats = snap.val();
+      off(childRef);
+      resolve(chats);
+    });
   });
 
 export const getChatById = (
@@ -243,8 +229,7 @@ export const getChatById = (
   chatId: string
 ): Promise<ChatMetadata> =>
   new Promise((resolve) => {
-    console.warn("getChatById", chatId);
-    const childRef = child(firebaseDB, `chat-metadata/${chatId}`);
+    const childRef = chatMetadataRef(firebaseDB, chatId);
     onValue(childRef, (snap) => {
       const chat = snap.val();
       // not sure if we need to off `childRef` here

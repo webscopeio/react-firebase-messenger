@@ -10,7 +10,10 @@ import {
   query,
   onValue,
 } from "firebase/database";
-import { chatMessagesRef, usersRef } from "../firebase/references";
+import {
+  chatMessagesRef,
+  usersRef,
+} from "../firebase/references";
 import {
   checkForChatExistence,
   toSendMessage,
@@ -30,7 +33,6 @@ import type {
 
 type Props = {
   firebaseDBRef: DatabaseReference;
-  oldFirebaseDBRef: Object | any;
   component: Object;
 };
 
@@ -58,8 +60,7 @@ const emptyFunc = () => null;
 const ChatProviderWrapper = (
   firebaseDB: DatabaseReference,
   ComposedComponent: React.ComponentType<any>,
-  packageCount: number = MESSAGE_PACKAGE_COUNT,
-  oldFirebaseDB: any
+  packageCount: number = MESSAGE_PACKAGE_COUNT
 ) => {
   class ChatProvider extends React.Component<Props, State> {
     state = chatDefaultState;
@@ -75,16 +76,20 @@ const ChatProviderWrapper = (
         webMessageTransform: boolean;
       }) =>
       (chatId: string, newChat?: boolean) => {
-        console.warn("chatListner", chatId);
         const { initialLoad } = this.state;
+        const chatMessages = chatMessagesRef(firebaseDB, chatId);
+        const orderByCreatedAt = orderByChild("createdAt");
+        const limitToLastPackageCount = limitToLast(packageCount);
+        const queryRef = query(
+          chatMessages,
+          orderByCreatedAt,
+          limitToLastPackageCount
+        );
         // we want to fetch first N messages at once
         if (!newChat && initialLoad) {
-          oldFirebaseDB
-            .child(`chat-messages/${chatId}`)
-            .orderByChild("createdAt")
-            .limitToLast(packageCount)
-            .once("value")
-            .then((messagesSnap) => {
+          onValue(
+            queryRef,
+            (messagesSnap) => {
               /*
                * Here we fetch first batch of the messages at once and process them for the chat
                * component. After that we push them to state, mark initial load as done and unsubsribe
@@ -94,7 +99,6 @@ const ChatProviderWrapper = (
               const processedMessages: Message[] = [];
 
               messagesSnap.forEach((messageSnippet) => {
-                console.warn("chatListner", 1.1, messageSnippet.val());
                 const message = listnerSingleMessageTransform(
                   messageSnippet.key,
                   participants
@@ -111,42 +115,38 @@ const ChatProviderWrapper = (
                   processedMessages.length - this.state.messagesCount,
                 initialLoad: false,
               });
-            });
+            },
+            // ensure to read data only once
+            {
+              onlyOnce: true,
+            }
+          );
         } else {
-          oldFirebaseDB
-            .child(`chat-messages/${chatId}`)
-            .orderByChild("createdAt")
-            .limitToLast(packageCount)
-            .on("child_added", (messageSnippet) => {
-              console.warn("chatListner", 3, messageSnippet.val());
-              const message = listnerSingleMessageTransform(
-                messageSnippet.key,
-                participants
-              )(messageSnippet.val());
+          onChildAdded(queryRef, (messageSnippet) => {
+            const message = listnerSingleMessageTransform(
+              messageSnippet.key,
+              participants
+            )(messageSnippet.val());
 
-              // We have to check for duplicates since we get already fetched node as well after
-              // initial load
-              /* eslint-disable no-underscore-dangle */
-              if (
-                this.state.messages.some((m: Message) => m._id === message._id)
-              ) {
-                console.warn("chatListner", 3.5);
-                return;
-              }
+            // We have to check for duplicates since we get already fetched node as well after
+            // initial load
+            /* eslint-disable no-underscore-dangle */
+            if (
+              this.state.messages.some((m: Message) => m._id === message._id)
+            ) {
+              return;
+            }
 
-              console.warn("chatListner", 4);
-              const updatedMesseges = webMessageTransform
-                ? R.append(message, this.state.messages)
-                : R.prepend(message, this.state.messages);
+            const updatedMesseges = webMessageTransform
+              ? R.append(message, this.state.messages)
+              : R.prepend(message, this.state.messages);
 
-              this.setState({
-                messages: updatedMesseges,
-                messagesCount: this.state.messagesCount + 1,
-                initialLoad: false,
-              });
-
-              console.warn("chatListner", 5, updatedMesseges);
+            this.setState({
+              messages: updatedMesseges,
+              messagesCount: this.state.messagesCount + 1,
+              initialLoad: false,
             });
+          });
         }
       };
 
@@ -163,7 +163,6 @@ const ChatProviderWrapper = (
         recipientsIds: Array<string>;
       }) =>
       (messages: Array<Message>) => {
-        console.warn("createNewChat", newChatId);
         const newChatMetaUpdate: Omit<ChatMetadata, "isCustom" | "shiftId"> = {
           lastMessageText: R.last(messages)?.text || "",
           lastMessageCreatedAt: R.last(messages)?.createdAt || new Date(),
@@ -180,7 +179,7 @@ const ChatProviderWrapper = (
         });
 
         toSendMessage({
-          firebaseDB: oldFirebaseDB,
+          firebaseDB,
           chatId: newChatId,
           userId: uid,
           messages,
@@ -211,9 +210,8 @@ const ChatProviderWrapper = (
       recipientsIds: Array<string>;
       messages: Array<Message>;
     }) => {
-      console.warn("onSend", chatId);
       toSendMessage({
-        firebaseDB: oldFirebaseDB,
+        firebaseDB,
         chatId,
         userId: uid,
         messages,
@@ -228,10 +226,8 @@ const ChatProviderWrapper = (
       });
     };
 
-    unsubscribeChatMessages = (chatId: string) => {
-      console.warn("unsubscribeChatMessages", chatId);
-      return off(chatMessagesRef(firebaseDB, chatId));
-    };
+    unsubscribeChatMessages = (chatId: string) =>
+      off(chatMessagesRef(firebaseDB, chatId));
 
     loadMoreMessages = ({
       chatId,
@@ -245,7 +241,6 @@ const ChatProviderWrapper = (
       // TODO not sure what type is this, as it is not call anywhere to be function. It's used in condition.
       webMessageTransform: Function;
     }) => {
-      console.warn("loadMoreMessages", chatId);
       const { messagesCount } = this.state;
       const updatedMsgsCount = messagesCount + packageCount;
       // draft
@@ -257,14 +252,19 @@ const ChatProviderWrapper = (
       // fetch last 5/10/15/20/...
 
       this.setState({ isLoadingEarlier: true }, () => {
-        oldFirebaseDB
-          .child(`chat-messages/${chatId}`)
-          .orderByChild("createdAt")
-          .limitToLast(updatedMsgsCount)
-          .once("value") // TODO via on and unsubscription
-          .then((chatMsgs) => {
-            const messagesFromDB = chatMsgs.val();
+        const chatMessages = chatMessagesRef(firebaseDB, chatId);
+        const orderByCreatedAt = orderByChild("createdAt");
+        const limitToLastPackageCount = limitToLast(updatedMsgsCount);
+        const queryRef = query(
+          chatMessages,
+          orderByCreatedAt,
+          limitToLastPackageCount
+        );
 
+        onValue(
+          queryRef,
+          (chatMsgs) => {
+            const messagesFromDB = chatMsgs.val() as CollectionObject<any>;
             if (R.values(messagesFromDB).length > this.state.messages.length) {
               // add to message's id to other message's object
               chatMsgs.forEach((item) => {
@@ -288,7 +288,12 @@ const ChatProviderWrapper = (
                 callBack || emptyFunc
               );
             }
-          });
+          },
+          // ensure to read data only once
+          {
+            onlyOnce: true,
+          }
+        );
       });
     };
 
@@ -299,7 +304,6 @@ const ChatProviderWrapper = (
       uid: string;
       prevMessages: Message[];
     }) => {
-      console.warn("markMessagesRead", uid, prevMessages);
       const { messages } = this.state;
       const messagesIds = getMessagesIds(messages);
       const prevMessagesIds = getMessagesIds(prevMessages);
@@ -319,7 +323,7 @@ const ChatProviderWrapper = (
           {}
         );
 
-        oldFirebaseDB.update(unreadMessagesToDeleteUpdate);
+        update(firebaseDB, unreadMessagesToDeleteUpdate);
       }
     };
 
@@ -336,7 +340,6 @@ const ChatProviderWrapper = (
     getChatParticipantsDetails = async (
       participants: CollectionObject<true>
     ) => {
-      console.warn("getChatParticipantsDetails", participants);
       const allChatsParticipants: CollectionObject<object> = {};
       await Promise.all(
         R.keys(participants).map(
@@ -366,7 +369,7 @@ const ChatProviderWrapper = (
     };
 
     getGroupChatsByEvent = (eventId: string) =>
-      getGroupChatsByEvent(oldFirebaseDB, eventId);
+      getGroupChatsByEvent(firebaseDB, eventId);
 
     render() {
       return (
