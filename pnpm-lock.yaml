@@ -93,6 +93,10 @@ importers:
         version: 4.9.5
 
   packages/core:
+    dependencies:
+      dayjs:
+        specifier: ^1.11.9
+        version: 1.11.9
     devDependencies:
       '@turbo/gen':
         specifier: ^1.10.12
@@ -181,6 +185,40 @@ importers:
         version: 5.2.2
 
   packages/tsconfig: {}
+
+  packages/web:
+    dependencies:
+      '@webscopeio/react-firebase-messenger':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@turbo/gen':
+        specifier: ^1.10.12
+        version: 1.10.12(@types/node@20.5.2)(typescript@5.2.2)
+      '@types/node':
+        specifier: ^20.5.2
+        version: 20.5.2
+      '@types/react':
+        specifier: ^18.2.5
+        version: 18.2.5
+      '@types/react-dom':
+        specifier: ^18.2.3
+        version: 18.2.3
+      eslint-config-custom:
+        specifier: workspace:^
+        version: link:../eslint-config-custom
+      react-native:
+        specifier: ^0.72.4
+        version: 0.72.4(@babel/core@7.22.11)(@babel/preset-env@7.22.14)(react@18.2.0)
+      tsconfig:
+        specifier: workspace:*
+        version: link:../tsconfig
+      tsup:
+        specifier: ^7.2.0
+        version: 7.2.0(typescript@5.2.2)
+      typescript:
+        specifier: ^5.2.2
+        version: 5.2.2
 
 packages:
 
@@ -3940,7 +3978,6 @@ packages:
 
   /dayjs@1.11.9:
     resolution: {integrity: sha512-QvzAURSbQ0pKdIye2txOzNaHmxtUBXerpY0FJsFXUMKbIZeFm5ht1LS/jFsrncjnmtv8HsG0W2g6c0zUjZWmpA==}
-    dev: true
 
   /debug@2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
@@ -7591,7 +7628,7 @@ packages:
     dependencies:
       object-assign: 4.1.1
       react: 18.2.0
-      react-is: 16.13.1
+      react-is: 18.2.0
     dev: true
 
   /react@18.2.0:
