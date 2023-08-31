@@ -1,3 +1,8 @@
 {
-  "extends": ["custom/react-package"]
+  "extends": ["custom/react-package"],
+  "rules": {
+    "@typescript-eslint/ban-types": "warn",
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/ban-ts-comment": "warn"
+  }
 }

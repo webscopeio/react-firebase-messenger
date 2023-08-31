@@ -19,11 +19,13 @@
     "access": "public"
   },
   "dependencies": {
-    "@webscopeio/react-firebase-messenger": "workspace:*"
+    "@webscopeio/react-firebase-messenger": "workspace:*",
+    "ramda": "^0.29.0"
   },
   "devDependencies": {
     "@turbo/gen": "^1.10.12",
     "@types/node": "^20.5.2",
+    "@types/ramda": "^0.29.3",
     "@types/react": "^18.2.5",
     "@types/react-dom": "^18.2.3",
     "eslint-config-custom": "workspace:^",
@@ -33,7 +35,9 @@
     "typescript": "^5.2.2"
   },
   "peerDependencies": {
-    "react-native": "^0.72.4"
+    "firebase": "10.1.0",
+    "react": "^15.0.0 || ^16.0.0",
+    "react-dom": "^15.0.0 || ^16.0.0"
   },
   "volta": {
     "node": "18.17.1"
