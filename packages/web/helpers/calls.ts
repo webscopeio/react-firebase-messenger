@@ -1,4 +1,4 @@
-import * as R from 'ramda'
+import R from 'ramda'
 import { type DatabaseReference, off, update, orderByChild, startAt, onValue, query, equalTo } from 'firebase/database'
 import { allChatMetadataRef, chatMetadataRef } from './references'
 import {

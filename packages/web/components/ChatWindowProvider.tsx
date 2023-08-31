@@ -1,5 +1,5 @@
 import React from 'react'
-import * as R from 'ramda'
+import R from 'ramda'
 import {
   type DatabaseReference,
   limitToLast,

@@ -1,5 +1,5 @@
 {
-  "name": "@webscopeio/react-firebase-messenger/native",
+  "name": "@webscopeio/react-firebase-messenger-native",
   "version": "0.0.0",
   "main": "./index.tsx",
   "types": "./index.tsx",
