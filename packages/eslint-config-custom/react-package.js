@@ -46,4 +46,9 @@ module.exports = {
     'plugin:prettier/recommended',
   ],
   ignorePatterns: ["node_modules/", "dist/"],
+  rules: {
+    "@typescript-eslint/ban-types": "warn",
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/ban-ts-comment": "warn"
+  }
 };
