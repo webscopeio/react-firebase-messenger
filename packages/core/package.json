@@ -21,6 +21,7 @@
   "devDependencies": {
     "@turbo/gen": "^1.10.12",
     "@types/node": "^20.5.2",
+    "@types/ramda": "^0.29.3",
     "@types/react": "^18.2.5",
     "@types/react-dom": "^18.2.3",
     "eslint-config-custom": "workspace:^",
@@ -32,6 +33,7 @@
     "node": "18.17.1"
   },
   "dependencies": {
-    "dayjs": "^1.11.9"
+    "dayjs": "^1.11.9",
+    "ramda": "^0.29.0"
   }
 }
