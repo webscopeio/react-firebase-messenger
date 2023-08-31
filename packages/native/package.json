@@ -1,0 +1,38 @@
+{
+  "name": "@webscopeio/react-firebase-messenger/native",
+  "version": "0.0.0",
+  "main": "./index.tsx",
+  "types": "./index.tsx",
+  "license": "MIT",
+  "tsup": {
+    "entry": "./index.ts",
+    "splitting": true,
+    "clean": true,
+    "minify": true
+  },
+  "scripts": {
+    "build": "tsup ./index.ts --format cjs --dts-resolve",
+    "lint": "eslint . && tsc --noEmit",
+    "generate:component": "turbo gen react-component"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@turbo/gen": "^1.10.12",
+    "@types/node": "^20.5.2",
+    "@types/react": "^18.2.5",
+    "@types/react-dom": "^18.2.3",
+    "eslint-config-custom": "workspace:^",
+    "react-native": "^0.72.4",
+    "tsconfig": "workspace:*",
+    "tsup": "^7.2.0",
+    "typescript": "^5.2.2"
+  },
+  "peerDependencies": {
+    "react-native": "^0.72.4"
+  },
+  "volta": {
+    "node": "18.17.1"
+  }
+}
