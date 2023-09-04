@@ -10,7 +10,11 @@ You can find all the info in [CONTRIBUTING.md](/CONTRIBUTING.md)
 ## Install
 
 ```bash
-npm install --save react-firebase-messenger
+# If you plan to use this in web / modular firebase API
+npm install --save @webscopeio/react-firebase-messenger @webscopeio/react-firebase-messenger-web rambda
+
+# In case you plan on using react-native / compat firebase API
+npm install --save @webscopeio/react-firebase-messenger @webscopeio/react-firebase-messenger-native rambda
 ```
 
 ## Usage
