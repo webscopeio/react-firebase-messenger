@@ -1,7 +1,5 @@
 import { assoc, compose, toPairs, keys } from 'rambda'
-// import { type DatabaseReference, off, update, orderByChild, startAt, onValue, query, equalTo } from 'firebase/database'
 import { FirebaseDatabaseTypes } from '@react-native-firebase/database'
-
 import { allChatMetadataRef, chatMetadataRef } from './references'
 import {
   type ChatMessage,

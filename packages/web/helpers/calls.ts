@@ -123,7 +123,7 @@ export const createEmptyChat = (
 export const addUserToChat = (firebaseDB: DatabaseReference, uid: string, chatId: string) => {
   const upp: Promise<ChatMetadata> = new Promise((resolve) => {
     const childRef = chatMetadataRef(firebaseDB, chatId)
-    return onValue(childRef, (snap) => resolve(snap.val()), { onlyOnce: true })
+    return onValue(childRef, (snap) => resolve(snap.val()))
   })
 
   upp.then((chatData) => {
