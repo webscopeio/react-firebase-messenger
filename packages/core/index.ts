@@ -17,6 +17,8 @@ import {
   toFlatList,
   getMessagesIds,
 } from './helpers/transformations'
+import type { OnSendMessage, CreateEmptyChat } from './models/common'
+import { createOnSendMessageUpdate, createEmptyChatUpdate } from './helpers/object-creators'
 
 export {
   type ChatMetadata,
@@ -28,6 +30,8 @@ export {
   type CollectionObject,
   type UnreadMessage,
   type ChatParticipant,
+  type OnSendMessage,
+  type CreateEmptyChat,
   toUnixTimestamp,
   unixToJSDate,
   transformMessagesToStoreInDB,
@@ -35,4 +39,6 @@ export {
   listnerSingleMessageTransform,
   toFlatList,
   getMessagesIds,
+  createOnSendMessageUpdate,
+  createEmptyChatUpdate,
 }
