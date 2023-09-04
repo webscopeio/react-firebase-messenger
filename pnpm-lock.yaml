@@ -201,7 +201,7 @@ importers:
         version: 10.1.0(react-native@0.72.4)
       react:
         specifier: ^15.0.0 || ^16.0.0
-        version: 18.2.0
+        version: 16.14.0
       react-dom:
         specifier: ^15.0.0 || ^16.0.0
         version: 16.14.0(react@16.14.0)
@@ -224,9 +224,6 @@ importers:
       rambda:
         specifier: ^8.3.0
         version: 8.3.0
-      react-native:
-        specifier: ^0.72.4
-        version: 0.72.4(@babel/core@7.22.11)(@babel/preset-env@7.22.14)(react@18.2.0)
       tsconfig:
         specifier: workspace:*
         version: link:../tsconfig
