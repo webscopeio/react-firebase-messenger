@@ -1,8 +1,17 @@
 {
   "name": "@webscopeio/react-firebase-messenger-web",
-  "version": "0.0.1",
-  "main": "./index.ts",
-  "types": "./index.ts",
+  "version": "0.0.3",
+  "main": "./dist/index.js",
+  "module": "./dist/index.esm.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "license": "MIT",
   "tsup": {
     "entry": "./index.ts",
@@ -11,7 +20,7 @@
     "minify": true
   },
   "scripts": {
-    "build": "tsup ./index.ts --format cjs --dts-resolve",
+    "build": "tsup ./index.ts --format cjs,esm --dts-resolve",
     "lint": "eslint . && tsc --noEmit",
     "generate:component": "turbo gen react-component"
   },
