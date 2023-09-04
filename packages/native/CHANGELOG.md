@@ -1,5 +1,16 @@
 # @webscopeio/react-firebase-messenger-native
 
+## 0.1.0
+
+### Minor Changes
+
+- Feat: Native build
+
+### Patch Changes
+
+- Updated dependencies
+  - @webscopeio/react-firebase-messenger@0.1.0
+
 ## 0.0.5
 
 ### Patch Changes
