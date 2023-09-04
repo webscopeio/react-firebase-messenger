@@ -1,0 +1,56 @@
+{
+  "name": "@webscopeio/react-firebase-messenger-native",
+  "version": "0.1.0",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "license": "MIT",
+  "tsup": {
+    "entry": "./index.ts",
+    "splitting": true,
+    "clean": true,
+    "minify": true
+  },
+  "scripts": {
+    "build": "tsup ./index.ts --format cjs,esm --dts-resolve",
+    "lint": "eslint . && tsc --noEmit",
+    "generate:component": "turbo gen react-component"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@webscopeio/react-firebase-messenger": "workspace:*"
+  },
+  "devDependencies": {
+    "@react-native-firebase/database": "~14.11.0",
+    "@turbo/gen": "^1.10.12",
+    "@types/node": "^20.5.2",
+    "@types/react": "^18.2.5",
+    "@types/react-dom": "^18.2.3",
+    "eslint-config-custom": "workspace:^",
+    "rambda": "^8.3.0",
+    "react": "^18.2.0",
+    "react-native": "^0.72.4",
+    "tsconfig": "workspace:*",
+    "tsup": "^7.2.0",
+    "typescript": "^5.2.2"
+  },
+  "peerDependencies": {
+    "@react-native-firebase/database": "~14.11.0",
+    "rambda": "^8.3.0",
+    "react": "^18.2.0",
+    "react-native": "^0.72.4"
+  },
+  "volta": {
+    "node": "18.17.1"
+  }
+}

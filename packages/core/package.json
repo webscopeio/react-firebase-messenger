@@ -1,0 +1,49 @@
+{
+  "name": "@webscopeio/react-firebase-messenger",
+  "version": "0.1.0",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "license": "MIT",
+  "tsup": {
+    "entry": "./index.ts",
+    "splitting": true,
+    "clean": true,
+    "minify": true
+  },
+  "scripts": {
+    "build": "tsup ./index.ts --format cjs,esm --dts-resolve",
+    "lint": "eslint . && tsc --noEmit",
+    "generate:component": "turbo gen react-component"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@turbo/gen": "^1.10.12",
+    "@types/node": "^20.5.2",
+    "@types/react": "^18.2.5",
+    "@types/react-dom": "^18.2.3",
+    "dayjs": "^1.11.9",
+    "eslint-config-custom": "workspace:^",
+    "rambda": "^8.3.0",
+    "tsconfig": "workspace:*",
+    "tsup": "^7.2.0",
+    "typescript": "^5.2.2"
+  },
+  "volta": {
+    "node": "18.17.1"
+  },
+  "peerDependencies": {
+    "dayjs": "^1.11.9",
+    "rambda": "^8.3.0"
+  }
+}
