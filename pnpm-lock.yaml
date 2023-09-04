@@ -162,8 +162,8 @@ importers:
         version: link:../core
     devDependencies:
       '@react-native-firebase/database':
-        specifier: '14.11'
-        version: 14.11.2(@react-native-firebase/app@14.11.2)
+        specifier: ~14.11.0
+        version: 14.11.0(@react-native-firebase/app@14.11.0)
       '@turbo/gen':
         specifier: ^1.10.12
         version: 1.10.12(@swc/core@1.3.82)(@types/node@20.5.2)(typescript@5.2.2)
@@ -179,6 +179,9 @@ importers:
       eslint-config-custom:
         specifier: workspace:^
         version: link:../eslint-config-custom
+      rambda:
+        specifier: ^8.3.0
+        version: 8.3.0
       react-native:
         specifier: ^0.72.4
         version: 0.72.4(@babel/core@7.22.11)(@babel/preset-env@7.22.14)(react@18.2.0)
@@ -3037,8 +3040,8 @@ packages:
       - supports-color
       - utf-8-validate
 
-  /@react-native-firebase/app@14.11.2(react-native@0.72.4)(react@18.2.0):
-    resolution: {integrity: sha512-27E5OuEgasafBn2/V6EsEYyjrY6iNHqmM4jLgu77KZAo60d6Dq/APD2UxTMpSi6OPSblTF5f9YfazoyW46peYA==}
+  /@react-native-firebase/app@14.11.0(react-native@0.72.4)(react@18.2.0):
+    resolution: {integrity: sha512-LzqgZNx+WcNGYRZG6LB9BkJAx4LE+LsbPF9p65TMSagWYd/iJafoXl4d6KWQeUMIFZQH7Ke/eJ/fIZkc+4eMRw==}
     peerDependencies:
       react: '*'
       react-native: '*'
@@ -3052,12 +3055,12 @@ packages:
       - supports-color
     dev: true
 
-  /@react-native-firebase/database@14.11.2(@react-native-firebase/app@14.11.2):
-    resolution: {integrity: sha512-KeeM3Cob9OzcS72PO/VQj0w1a3t2ctqV7R+I5akHTEK1gvxjg2Be6flEQiN99DcxKX22GSXgZhZYu0FizozZuQ==}
+  /@react-native-firebase/database@14.11.0(@react-native-firebase/app@14.11.0):
+    resolution: {integrity: sha512-fD+OYvJjhDhDJmbARzKOZPcsmc3sAExZzKzYijscTDHwhmVM1hgddoTQZMQr40jIQVY5uO2PPx7BiKOz5dZssg==}
     peerDependencies:
-      '@react-native-firebase/app': 14.11.2
+      '@react-native-firebase/app': 14.11.0
     dependencies:
-      '@react-native-firebase/app': 14.11.2(react-native@0.72.4)(react@18.2.0)
+      '@react-native-firebase/app': 14.11.0(react-native@0.72.4)(react@18.2.0)
     dev: true
 
   /@react-native/assets-registry@0.72.0:
