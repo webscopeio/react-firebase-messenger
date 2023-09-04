@@ -1,6 +1,6 @@
 {
   "name": "@webscopeio/react-firebase-messenger",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -30,10 +30,11 @@
   "devDependencies": {
     "@turbo/gen": "^1.10.12",
     "@types/node": "^20.5.2",
-    "@types/ramda": "^0.29.3",
     "@types/react": "^18.2.5",
     "@types/react-dom": "^18.2.3",
+    "dayjs": "^1.11.9",
     "eslint-config-custom": "workspace:^",
+    "rambda": "^8.3.0",
     "tsconfig": "workspace:*",
     "tsup": "^7.2.0",
     "typescript": "^5.2.2"
@@ -41,8 +42,8 @@
   "volta": {
     "node": "18.17.1"
   },
-  "dependencies": {
+  "peerDependencies": {
     "dayjs": "^1.11.9",
-    "ramda": "^0.29.0"
+    "rambda": "^8.3.0"
   }
 }

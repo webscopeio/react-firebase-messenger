@@ -96,13 +96,6 @@ importers:
         version: 4.9.5
 
   packages/core:
-    dependencies:
-      dayjs:
-        specifier: ^1.11.9
-        version: 1.11.9
-      ramda:
-        specifier: ^0.29.0
-        version: 0.29.0
     devDependencies:
       '@turbo/gen':
         specifier: ^1.10.12
@@ -110,18 +103,21 @@ importers:
       '@types/node':
         specifier: ^20.5.2
         version: 20.5.2
-      '@types/ramda':
-        specifier: ^0.29.3
-        version: 0.29.3
       '@types/react':
         specifier: ^18.2.5
         version: 18.2.5
       '@types/react-dom':
         specifier: ^18.2.3
         version: 18.2.3
+      dayjs:
+        specifier: ^1.11.9
+        version: 1.11.9
       eslint-config-custom:
         specifier: workspace:^
         version: link:../eslint-config-custom
+      rambda:
+        specifier: ^8.3.0
+        version: 8.3.0
       tsconfig:
         specifier: workspace:*
         version: link:../tsconfig
@@ -203,12 +199,9 @@ importers:
       firebase:
         specifier: 10.1.0
         version: 10.1.0(react-native@0.72.4)
-      ramda:
-        specifier: ^0.29.0
-        version: 0.29.0
       react:
         specifier: ^15.0.0 || ^16.0.0
-        version: 16.14.0
+        version: 18.2.0
       react-dom:
         specifier: ^15.0.0 || ^16.0.0
         version: 16.14.0(react@16.14.0)
@@ -219,9 +212,6 @@ importers:
       '@types/node':
         specifier: ^20.5.2
         version: 20.5.2
-      '@types/ramda':
-        specifier: ^0.29.3
-        version: 0.29.3
       '@types/react':
         specifier: ^18.2.5
         version: 18.2.5
@@ -231,9 +221,12 @@ importers:
       eslint-config-custom:
         specifier: workspace:^
         version: link:../eslint-config-custom
+      rambda:
+        specifier: ^8.3.0
+        version: 8.3.0
       react-native:
         specifier: ^0.72.4
-        version: 0.72.4(@babel/core@7.22.11)(@babel/preset-env@7.22.14)(react@16.14.0)
+        version: 0.72.4(@babel/core@7.22.11)(@babel/preset-env@7.22.14)(react@18.2.0)
       tsconfig:
         specifier: workspace:*
         version: link:../tsconfig
@@ -3290,12 +3283,6 @@ packages:
 
   /@types/prop-types@15.7.5:
     resolution: {integrity: sha512-JCB8C6SnDoQf0cNycqd/35A7MjcnK+ZTqE7judS6o7utxUCg6imJg3QK2qzHKszlTjcj2cn+NwMB2i96ubpj7w==}
-    dev: true
-
-  /@types/ramda@0.29.3:
-    resolution: {integrity: sha512-Yh/RHkjN0ru6LVhSQtTkCRo6HXkfL9trot/2elzM/yXLJmbLm2v6kJc8yftTnwv1zvUob6TEtqI2cYjdqG3U0Q==}
-    dependencies:
-      types-ramda: 0.29.4
     dev: true
 
   /@types/react-dom@18.2.3:
@@ -7903,9 +7890,9 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /ramda@0.29.0:
-    resolution: {integrity: sha512-BBea6L67bYLtdbOqfp8f58fPMqEwx0doL+pAi8TZyp2YWz8R9G8z9x75CZI8W+ftqhFHCpEX2cRnUUXK130iKA==}
-    dev: false
+  /rambda@8.3.0:
+    resolution: {integrity: sha512-XN5B8zIB6efO9Y9SrzdLQyk6XX3U7OyWESIvNYnm7AH8KCbXBtzsUVFaJYpUcIx5VahmvNV7fNjevR/ohc90jw==}
+    dev: true
 
   /range-parser@1.2.1:
     resolution: {integrity: sha512-Hrgsx+orqoygnmhFbKaHE6c296J+HTAQXoxEF6gNupROmmGJRoyzfG3ccAveqCBrwr/2yxQ5BVd/GTl5agOwSg==}
@@ -8012,6 +7999,7 @@ packages:
       - encoding
       - supports-color
       - utf-8-validate
+    dev: false
 
   /react-native@0.72.4(@babel/core@7.22.11)(@babel/preset-env@7.22.14)(react@18.2.0):
     resolution: {integrity: sha512-+vrObi0wZR+NeqL09KihAAdVlQ9IdplwznJWtYrjnQ4UbCW6rkzZJebRsugwUneSOKNFaHFEo1uKU89HsgtYBg==}
@@ -8077,6 +8065,7 @@ packages:
       object-assign: 4.1.1
       react: 16.14.0
       react-is: 18.2.0
+    dev: false
 
   /react-shallow-renderer@16.15.0(react@18.2.0):
     resolution: {integrity: sha512-oScf2FqQ9LFVQgA73vr86xl2NaOIX73rh+YFqcOp68CWj56tSfgtGKrEbyhCj0rSijyG9M1CYprTh39fBi5hzA==}
@@ -8094,6 +8083,7 @@ packages:
       loose-envify: 1.4.0
       object-assign: 4.1.1
       prop-types: 15.8.1
+    dev: false
 
   /react@18.2.0:
     resolution: {integrity: sha512-/3IjMdb2L9QbBdWiW5e3P2/npwMBaU9mHCSCUzNln0ZCYbcfTsGbTJrU/kGemdH2IWmB2ioZ+zkxtmq6g09fGQ==}
@@ -9036,10 +9026,6 @@ packages:
       yn: 3.1.1
     dev: true
 
-  /ts-toolbelt@9.6.0:
-    resolution: {integrity: sha512-nsZd8ZeNUzukXPlJmTBwUAuABDe/9qtVDelJeT/qW0ow3ZS3BsQJtNkan1802aM9Uf68/Y8ljw86Hu0h5IUW3w==}
-    dev: true
-
   /tsconfig-paths@3.14.2:
     resolution: {integrity: sha512-o/9iXgCYc5L/JxCHPe3Hvh8Q/2xm5Z+p18PESBU6Ff33695QnCHBEjcytY2q19ua7Mbl/DavtBOLq+oG0RCL+g==}
     dependencies:
@@ -9255,12 +9241,6 @@ packages:
       is-typed-array: 1.1.10
     dev: true
 
-  /types-ramda@0.29.4:
-    resolution: {integrity: sha512-XO/820iRsCDwqLjE8XE+b57cVGPyk1h+U9lBGpDWvbEky+NQChvHVwaKM05WnW1c5z3EVQh8NhXFmh2E/1YazQ==}
-    dependencies:
-      ts-toolbelt: 9.6.0
-    dev: true
-
   /typescript@4.9.5:
     resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
     engines: {node: '>=4.2.0'}
@@ -9374,6 +9354,7 @@ packages:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
     dependencies:
       react: 16.14.0
+    dev: false
 
   /use-sync-external-store@1.2.0(react@18.2.0):
     resolution: {integrity: sha512-eEgnFxGQ1Ife9bzYs6VLi8/4X6CObHMw9Qr9tPY43iKwsPw8xE8+EFsf/2cFZ5S3esXgpWgtSCtLNS41F+sKPA==}

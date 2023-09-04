@@ -1,4 +1,4 @@
-import R from 'ramda'
+import { compose, map, toPairs, assoc, dissoc, evolve, sortBy, prop, values, reverse, indexBy, keys } from 'rambda'
 
 import { ChatMessage, ChatUser, CollectionObject, Message, UserChatsEntity } from '../models/database'
 import { toUnixTimestamp, unixToJSDate } from './time-convertors'
@@ -10,27 +10,28 @@ import { toUnixTimestamp, unixToJSDate } from './time-convertors'
  * From `Message`s to `ChatMessage`s.
  */
 export const transformMessagesToStoreInDB = (userId: string) =>
-  R.compose<Message[][], CollectionObject<Message>, CollectionObject<ChatMessage>, Array<[string, ChatMessage]>>(
-    R.toPairs,
-    R.map(
-      // TODO: Get rid of the any
-      R.compose<any, any, any, any, any>(
-        R.evolve({
+  compose<Message[][], CollectionObject<Message>, CollectionObject<ChatMessage>, Array<[string, ChatMessage]>>(
+    toPairs,
+    // @ts-ignore evolved type is not correct with map
+    map(
+      compose(
+        // @ts-ignore evolved type is not correct with map
+        evolve({
           createdAt: toUnixTimestamp,
         }),
-        R.assoc('userId', userId),
-        R.dissoc('_id'),
-        R.dissoc('user'),
+        assoc('userId', userId),
+        dissoc('_id'),
+        dissoc('user'),
       ),
     ),
-    R.indexBy(R.prop('_id')),
-  )
+    indexBy(prop('_id')),
+  ) as (messages: Message[]) => Array<[string, ChatMessage]>
 
 // Create user object in GiftedChat requires shape
 const createUserObject = (participants: CollectionObject<ChatUser>) => (messageObject: ChatMessage) => {
   const participant = participants[messageObject.userId]
 
-  return R.assoc(
+  return assoc(
     'user',
     {
       _id: messageObject.userId,
@@ -43,19 +44,19 @@ const createUserObject = (participants: CollectionObject<ChatUser>) => (messageO
 
 // handling list of messages which are got from firebase
 export const loadMoreMessagesListTransform = (participants: CollectionObject<ChatUser>) =>
-  R.compose<CollectionObject<ChatMessage>[], ChatMessage[], Message[], Message[]>(
-    // R.reverse,
-    R.sortBy(R.prop('createdAt')),
-    R.map(
-      R.compose<any, any, any, any>(
-        R.dissoc('userId'),
-        R.evolve({
+  compose<CollectionObject<ChatMessage>[], ChatMessage[], Message[], Message[]>(
+    // reverse,
+    sortBy(prop('createdAt')),
+    map(
+      compose<any, any, any, any>(
+        dissoc('userId'),
+        evolve({
           createdAt: unixToJSDate,
         }),
         createUserObject(participants),
       ),
     ),
-    R.values,
+    values,
   )
 
 // handling one single message which is got from firebase
@@ -63,38 +64,39 @@ export const listnerSingleMessageTransform = (
   messageSnippetKey: string | null,
   participants: CollectionObject<ChatUser>,
 ) =>
-  R.compose<
+  compose<
     ChatMessage[],
     ChatMessage & { user: Message['user'] },
     ChatMessage & Message,
     Omit<ChatMessage & Message, 'userId'>,
     Message
   >(
-    R.dissoc('userId'),
-    R.evolve<any>({
+    dissoc('userId'),
+    evolve<any>({
       createdAt: unixToJSDate,
     }),
-    R.assoc('_id', messageSnippetKey),
+    // @ts-ignore
+    assoc('_id', messageSnippetKey),
     createUserObject(participants),
-  )
+  ) as (...messages: ChatMessage[]) => Message
 
 // Transform data into FlatList requires shape
 export const toFlatList = (userChats: CollectionObject<Omit<UserChatsEntity, 'chatId'>>) =>
-  R.compose<
+  compose<
     CollectionObject<Omit<UserChatsEntity, 'chatId'>>[],
     any,
     Array<UserChatsEntity>,
     Array<UserChatsEntity>,
     Array<UserChatsEntity>
-  >(R.reverse, R.sortBy(R.prop('lastMessageCreatedAt')), R.values, (item) => {
-    const keys = R.keys(item)
-    keys.forEach(
+  >(reverse, sortBy(prop('lastMessageCreatedAt')), values, (item) => {
+    const lKeys = keys(item)
+    lKeys.forEach(
       // @ts-ignore // TODO: fix this however it should not throw error even it does :(
-      (key) => (item[key] = R.compose(R.assoc('chatId', key))(item[key])),
+      (key) => (item[key] = compose(assoc('chatId', key))(item[key])),
     )
 
     return item
   })(userChats)
 
 // eslint-disable-next-line no-underscore-dangle
-export const getMessagesIds = R.map<Message, string>((message) => message._id)
+export const getMessagesIds = map<Message, string>((message) => message._id)

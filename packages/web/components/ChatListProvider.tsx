@@ -1,5 +1,5 @@
 import React from 'react'
-import R from 'ramda'
+import { compose, keys, evolve, append, assoc, dissoc } from 'rambda'
 import { onValue, type DatabaseReference, off, orderByChild, query } from 'firebase/database'
 import { chatMetadataRef, usersRef, userChatsAllRef } from '../helpers/references'
 import {
@@ -65,22 +65,22 @@ class ChatListProvider extends React.Component<Props, State> {
                   const chatMetaRef = chatMetadataRef(firebaseDBRef, chatId)
                   const chatMetaListener = onValue(chatMetaRef, (chatMetaSnapshot) => {
                     // TODO resolve any
-                    let chatMetas = R.compose<
+                    let chatMetas = compose<
                       Omit<UserChatsEntity & { users: ChatMetadata['users'] }, 'participants'>[],
                       UserChatsEntity & { users: ChatMetadata['users'] },
                       UserChatsEntity & { users: ChatMetadata['users'] }
                     >(
-                      R.evolve<any>({
-                        users: R.dissoc(uid), // dissoc THE user
+                      evolve<any>({
+                        users: dissoc(uid), // dissoc THE user
                       }),
-                      R.assoc('participants', []),
+                      assoc('participants', []),
                     )(chatMetaSnapshot.val())
 
                     // TODO how does it have `unreadCount` field
                     chatMetas.unseenMessages = chatsMetaValues[chatId].unreadCount
 
                     Promise.all(
-                      R.keys(chatMetas.users).map(
+                      keys(chatMetas.users).map(
                         (id) =>
                           new Promise((resolve) => {
                             // It is save to cast `id` to string
@@ -93,11 +93,11 @@ class ChatListProvider extends React.Component<Props, State> {
                                 uid: participantId,
                               }
 
-                              chatMetas = R.compose(
-                                R.evolve({
-                                  participants: R.append(userData),
+                              chatMetas = compose(
+                                evolve({
+                                  participants: append(userData),
                                 }),
-                              )(chatMetas)
+                              )(chatMetas) as UserChatsEntity & { users: ChatMetadata['users'] }
 
                               allChatsParticipants[participantId] = true
                               // resolve participantId just to fulfill the promise

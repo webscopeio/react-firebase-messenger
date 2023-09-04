@@ -1,5 +1,13 @@
 # @webscopeio/react-firebase-messenger-web
 
+## 0.0.5
+
+### Patch Changes
+
+- Update: replace ramda with rambda (+ts fixes)
+- Updated dependencies
+  - @webscopeio/react-firebase-messenger@0.0.5
+
 ## 0.0.4
 
 ### Patch Changes

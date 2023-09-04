@@ -1,4 +1,4 @@
-import R from 'ramda'
+import { assoc, compose, toPairs, keys } from 'rambda'
 import { type DatabaseReference, off, update, orderByChild, startAt, onValue, query, equalTo } from 'firebase/database'
 import { allChatMetadataRef, chatMetadataRef } from './references'
 import {
@@ -36,7 +36,7 @@ export const toSendMessage = ({
 
   const messagesUpdate = msgs.reduce<CollectionObject<ChatMessage>>((result, message) => {
     // message[0] - author id, message[1] - message data
-    const newResult = R.assoc(`chat-messages/${chatId}/${message[0]}`, message[1], result || {})
+    const newResult = assoc(`chat-messages/${chatId}/${message[0]}`, message[1], result || {})
     return newResult
   }, {})
 
@@ -45,7 +45,7 @@ export const toSendMessage = ({
 
     recipientsIds.forEach((recipientId) => {
       if (recipientId !== userId) {
-        newResult = R.assoc(
+        newResult = assoc(
           `unread-messages/${recipientId}/${message[0]}`,
           {
             chatId,
@@ -59,10 +59,10 @@ export const toSendMessage = ({
   }, {})
 
   const lastMessageCreatedAtUpdate = recipientsIds.reduce<CollectionObject<string>>((result, participantId) => {
-    const newResult = R.compose(
-      R.assoc(`user-chats/${participantId}/${chatId}/lastMessageCreatedAt`, lastMessageTimeStamp),
+    const newResult = compose(
+      assoc(`user-chats/${participantId}/${chatId}/lastMessageCreatedAt`, lastMessageTimeStamp),
       /* //
-      R.assoc(`user-event-chats/${participantId}/${eventId}/${chatId}/lastMessageCreatedAt`,
+      assoc(`user-event-chats/${participantId}/${eventId}/${chatId}/lastMessageCreatedAt`,
       lastMessageTimeStamp), //
       */
     )(result || {})
@@ -104,8 +104,8 @@ export const createEmptyChat = (
   const lastMessageTimeStamp = toUnixTimestamp(meta.lastMessageCreatedAt)
 
   const lastMessageCreatedAtUpdate = recipientsIds.reduce((result, participantId) => {
-    const newResult = R.compose(
-      R.assoc(`user-chats/${participantId}/${chatId}/lastMessageCreatedAt`, lastMessageTimeStamp),
+    const newResult = compose(
+      assoc(`user-chats/${participantId}/${chatId}/lastMessageCreatedAt`, lastMessageTimeStamp),
     )(result)
     return newResult
   }, {})
@@ -140,11 +140,11 @@ export const checkForChatExistence = (firebaseDB: DatabaseReference, theUserId: 
   new Promise((resolve) => {
     const childRef = allChatMetadataRef(firebaseDB)
     onValue(query(childRef, orderByChild(`users/${theUserId}`), startAt(true)), (snap) => {
-      const chats = R.toPairs(snap.val())
+      const chats = toPairs(snap.val())
 
       const filtredChats = chats.filter((chat) => {
         const chatMetas = chat[1]
-        const chatParticipants = R.keys(chatMetas.users)
+        const chatParticipants = keys(chatMetas.users)
         const ind = chatParticipants.indexOf(uid)
 
         return (

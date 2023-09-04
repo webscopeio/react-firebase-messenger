@@ -1,5 +1,5 @@
 import React from 'react'
-import R from 'ramda'
+import { append, prepend, last, concat, values, reverse, difference, assoc, keys } from 'rambda'
 import {
   type DatabaseReference,
   limitToLast,
@@ -20,6 +20,7 @@ import {
   type ChatUser,
   type CollectionObject,
   type Message,
+  ChatMessage,
 } from '@webscopeio/react-firebase-messenger'
 
 type Props = {
@@ -82,7 +83,7 @@ const ChatProviderWrapper = (
                * from value listener as we will listen only to child_added events after that. In order
                * to display lates send message.
                */
-              const processedMessages: Message[] = []
+              const processedMessages: Array<Message> = []
 
               messagesSnap.forEach((messageSnippet) => {
                 const message = listnerSingleMessageTransform(messageSnippet.key, participants)(messageSnippet.val())
@@ -113,8 +114,8 @@ const ChatProviderWrapper = (
             }
 
             const updatedMesseges = webMessageTransform
-              ? R.append(message, this.state.messages)
-              : R.prepend(message, this.state.messages)
+              ? append(message, this.state.messages)
+              : prepend(message, this.state.messages)
 
             this.setState({
               messages: updatedMesseges,
@@ -139,15 +140,15 @@ const ChatProviderWrapper = (
       }) =>
       (messages: Array<Message>) => {
         const newChatMetaUpdate: Omit<ChatMetadata, 'isCustom' | 'shiftId'> = {
-          lastMessageText: R.last(messages)?.text || '',
-          lastMessageCreatedAt: R.last(messages)?.createdAt || new Date(),
+          lastMessageText: last(messages)?.text || '',
+          lastMessageCreatedAt: last(messages)?.createdAt || new Date(),
           lastMessageAuthorId: uid,
           users: {},
           eventId,
           // now all of them are private by default
           type: 'private',
         }
-        const participants = R.concat([uid], recipientsIds)
+        const participants = concat([uid], recipientsIds)
 
         participants.forEach((id) => {
           newChatMetaUpdate.users[id] = true
@@ -193,8 +194,8 @@ const ChatProviderWrapper = (
         eventId,
         recipientsIds,
         meta: {
-          lastMessageText: R.last<Message>(messages)?.text ?? '',
-          lastMessageCreatedAt: R.last<Message>(messages)?.createdAt || new Date(),
+          lastMessageText: last(messages)?.text ?? '',
+          lastMessageCreatedAt: last(messages)?.createdAt || new Date(),
           lastMessageAuthorId: uid,
         },
       })
@@ -234,7 +235,7 @@ const ChatProviderWrapper = (
           queryRef,
           (chatMsgs) => {
             const messagesFromDB = chatMsgs.val() as CollectionObject<any>
-            if (R.values(messagesFromDB).length > this.state.messages.length) {
+            if (values(messagesFromDB).length > this.state.messages.length) {
               // add to message's id to other message's object
               chatMsgs.forEach((item) => {
                 /* eslint-disable no-underscore-dangle */
@@ -248,7 +249,7 @@ const ChatProviderWrapper = (
                 {
                   hasMoreToLoad,
                   isLoadingEarlier: false,
-                  messages: webMessageTransform ? loadedMessages : R.reverse(loadedMessages),
+                  messages: webMessageTransform ? loadedMessages : reverse(loadedMessages),
                   messagesCount: updatedMsgsCount,
                 },
                 callBack || emptyFunc,
@@ -268,11 +269,11 @@ const ChatProviderWrapper = (
       const messagesIds = getMessagesIds(messages)
       const prevMessagesIds = getMessagesIds(prevMessages)
 
-      const diff = R.difference(messagesIds, prevMessagesIds)
+      const diff = difference(messagesIds, prevMessagesIds)
 
       if (diff.length) {
         const unreadMessagesToDeleteUpdate = diff.reduce((result, messageId) => {
-          const newResult = R.assoc(`unread-messages/${uid}/${messageId}`, null, result || {})
+          const newResult = assoc(`unread-messages/${uid}/${messageId}`, null, result || {})
           return newResult
         }, {})
 
@@ -286,7 +287,7 @@ const ChatProviderWrapper = (
     getChatParticipantsDetails = async (participants: CollectionObject<true>) => {
       const allChatsParticipants: CollectionObject<object> = {}
       await Promise.all(
-        R.keys(participants).map(
+        keys(participants).map(
           // participantId is definitely string
           (participantId) =>
             new Promise((resolve) =>
