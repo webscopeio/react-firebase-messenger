@@ -1,5 +1,13 @@
 # @webscopeio/react-firebase-messenger-native
 
+## 0.0.4
+
+### Patch Changes
+
+- Fix: Point to .mjs in ESM Module imports
+- Updated dependencies
+  - @webscopeio/react-firebase-messenger@0.0.4
+
 ## 0.0.3
 
 ### Patch Changes
