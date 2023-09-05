@@ -38,6 +38,7 @@ export type ChatMetadata = {
   users: CollectionObject<true>
   type?: string
   chatId?: string
+  jobId?: string
 }
 
 export type ChatMessage = {
